@@ -225,9 +225,11 @@ func (mover *CephS3Mover) DownloadRange(objKey string, srcLoca *LocationInfo, bu
 	}
 	for tries := 1; tries <= 3; tries++ {
 		resp, err := cephObject.Get(objKey, &getObjectOption)
+		defer resp.Body.Close()
 		d, err := ioutil.ReadAll(resp.Body)
 		data := []byte(d)
 		size = int64(len(data))
+		copy(buf, data)
 		if err != nil {
 			log.Logf("[cephs3mover] Download object[%s] range[%d - %d] faild %d times, err:%v\n",
 				objKey, start, end, tries, err)
@@ -442,7 +444,7 @@ func ListObjs(loca *LocationInfo, filt *pb.Filter) ([]models.GetBucketResponseCo
 
 	sess := NewClient(loca.EndPoint, loca.Access, loca.Security)
 	bucket := sess.NewBucket()
-	object := bucket.NewObject(loca.BakendName)
+	object := bucket.NewObject(loca.BucketName)
 
 	//cephObject := bucket.NewObject(loca.BucketName)
 	//bucket := connection.NewBucket()
@@ -460,8 +462,17 @@ func ListObjs(loca *LocationInfo, filt *pb.Filter) ([]models.GetBucketResponseCo
 	objs := output.Contents
 
 	size := len(objs)
+
+	var out []models.GetBucketResponseContent
 	for i := 0; i < size; i++ {
-		objs = append(objs, output.Contents...)
+		out = append(out, models.GetBucketResponseContent{
+			Key:          objs[i].Key,
+			Size:         objs[i].Size,
+			StorageClass: objs[i].StorageClass,
+			Owner:        objs[i].Owner,
+			LastModified: objs[i].LastModified,
+			Tag:          objs[i].Tag,
+		})
 		err := object.SetACL(objs[i].Key, models.PublicReadWrite)
 		if err != nil {
 			log.Logf("[s3mover] Set ACL failed, err:%v\n", err)
