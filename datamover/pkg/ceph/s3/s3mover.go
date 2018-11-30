@@ -184,6 +184,11 @@ func (mover *CephS3Mover) DownloadObj(objKey string, srcLoca *LocationInfo, buf 
 	bucket := sess.NewBucket()
 	cephObject := bucket.NewObject(srcLoca.BucketName)
 	res, err := cephObject.Get(objKey, nil)
+	defer res.Body.Close()
+	d, err := ioutil.ReadAll(res.Body)
+	data := []byte(d)
+	size = int64(len(data))
+	copy(buf, data)
 	var numBytes int64
 	if err != nil {
 		log.Logf("[cephs3mover]download object[bucket:%s,key:%s] failed, err:%v\n", srcLoca.BucketName, objKey, err)
