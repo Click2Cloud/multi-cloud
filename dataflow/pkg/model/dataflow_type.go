@@ -27,7 +27,8 @@ var (
 	STOR_TYPE_AWS_S3           = "aws-s3"
 	STOR_TYPE_AZURE_BLOB       = "azure-blob"
 	STOR_TYPE_HW_OBS           = "hw-obs"
-	STOR_TYPE_HW_FUSIONSTORAGE = "fusionstorage-object"
+	STOR_TYPE_CEPH_S3          = "ceph-s3"
+	STOR_TYPE_HW_FUSIONSTORAGE = "hw-fusionstorage"
 	STOR_TYPE_HW_FUSIONCLOUD   = "hw-fusioncloud"
 )
 
@@ -59,7 +60,7 @@ var (
 )
 
 var (
-	DefaultLimit = 1000
+	DefaultLimit  = 1000
 	DefaultOffset = 0
 )
 
