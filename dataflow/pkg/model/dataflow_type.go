@@ -93,7 +93,7 @@ type KeyValue struct {
 }
 
 type Connector struct {
-	StorType   string     `json:"storType" bson:"storeType"`    //opensds-obj, aws-obj,azure-obj,ceph-obj,hw-obj,nas
+	StorType   string     `json:"storType" bson:"storeType"`    //opensds-obj, aws-obj,azure-obj,ceph-s3,hw-obj,nas
 	BucketName string     `json:"bucketName" bson:"bucketName"` //when StorType is opensds, need this
 	ConnConfig []KeyValue `json:"connConfig" bson:"connConfig"`
 }
