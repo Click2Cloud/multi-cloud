@@ -464,7 +464,7 @@ func (b *dataflowService) GetJob(ctx context.Context, in *pb.GetJobRequest, out 
 		out.Job = &pb.Job{Id: string(jb.Id.Hex()), Type: jb.Type, PlanName: jb.PlanName, PlanId: jb.PlanId,
 			Description: "for test", SourceLocation: jb.SourceLocation, DestLocation: jb.DestLocation,
 			CreateTime: jb.CreateTime.Unix(), EndTime: jb.EndTime.Unix(), Status: jb.Status, TotalCapacity: jb.TotalCapacity,
-			PassedCapacity: jb.PassedCapacity, TotalCount: jb.TotalCount, PassedCount: jb.PassedCount, Progress: jb.Progress}
+			PassedCapacity: jb.PassedCapacity, TotalCount: jb.TotalCount, PassedCount: jb.PassedCount, Progress: jb.Progress, TimeRequired: jb.TimeRequired}
 	}
 
 	//For debug -- begin
@@ -501,7 +501,7 @@ func (b *dataflowService) ListJob(ctx context.Context, in *pb.ListJobRequest, ou
 				SourceLocation: job.SourceLocation, DestLocation: job.DestLocation, StartTime: job.StartTime.Unix(),
 				CreateTime: job.CreateTime.Unix(), EndTime: job.EndTime.Unix(), Status: job.Status,
 				TotalCapacity: job.TotalCapacity, PassedCapacity: job.PassedCapacity, TotalCount: int64(job.TotalCount),
-				PassedCount: (int64(job.PassedCount)), Progress: int64(job.Progress)}
+				PassedCount: (int64(job.PassedCount)), Progress: int64(job.Progress), TimeRequired: job.TimeRequired}
 			out.Jobs = append(out.Jobs, &j)
 		}
 	}

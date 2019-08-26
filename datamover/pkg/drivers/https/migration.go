@@ -676,11 +676,28 @@ func runjob(in *pb.RunJobRequest) error {
 
 // To calculate Progress of migration process
 func progress(job *flowtype.Job, size int64, wt float64) {
-	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
-	MigratedCapacity := job.MigratedCapacity + float64(size)*(wt/100)
-	job.MigratedCapacity = math.Round(MigratedCapacity*100) / 100
-	// Progress = Migrated Capacity*100/ Total Capacity
-	job.Progress = int64(job.MigratedCapacity * 100 / float64(job.TotalCapacity))
-	logger.Printf("[INFO] Progress %d", job.Progress)
-	db.DbAdapter.UpdateJob(job)
+	start_time := time.Now()
+	if wt == WT_UPLOAD || wt == WT_DOWLOAD {
+		// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
+		MigratedCapacity := job.MigratedCapacity + float64(size)*(wt/100)
+		job.MigratedCapacity = math.Round(MigratedCapacity*100) / 100
+		speed := float64(size) / float64(time.Now().Sub(start_time).Seconds())
+		if job.Avg < speed {
+			job.Avg = speed
+		}
+		job.TimeRequired = 3 * int64((float64(job.TotalCapacity)*(1-(WT_DELETE/100))-job.MigratedCapacity)*100/(WT_UPLOAD*job.Avg))
+		// Progress = Migrated Capacity*100/ Total Capacity
+		job.Progress = int64(job.MigratedCapacity * 100 / float64(job.TotalCapacity))
+		logger.Printf("[INFO] Progress %d  Time-required = %d seconds", job.Progress, int64(job.TimeRequired))
+		db.DbAdapter.UpdateJob(job)
+
+	} else {
+		// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
+		MigratedCapacity := job.MigratedCapacity + float64(size)*(wt/100)
+		job.MigratedCapacity = math.Round(MigratedCapacity*100) / 100
+		// Progress = Migrated Capacity*100/ Total Capacity
+		job.Progress = int64(job.MigratedCapacity * 100 / float64(job.TotalCapacity))
+		logger.Printf("[INFO] Progress %d", job.Progress)
+		db.DbAdapter.UpdateJob(job)
+	}
 }
