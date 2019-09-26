@@ -75,11 +75,11 @@
 
 [[constraint]]
   name = "github.com/micro/go-micro"
-  version = "0.14.1"
+  version = "1.10.0"
 
-[[constraint]]
-  name = "github.com/micro/go-web"
-  version = "0.4.0"
+#[[constraint]]
+#  name = "github.com/micro/go-web"
+#  version = "0.4.0"
 
 [[constraint]]
   name = "github.com/robfig/cron"
@@ -109,3 +109,7 @@
 [[constraint]]
   name = "github.com/sirupsen/logrus"
   version = "1.4.2"
+
+[[constraint]]
+  name = "github.com/looplab/fsm"
+  version = "0.1.0"

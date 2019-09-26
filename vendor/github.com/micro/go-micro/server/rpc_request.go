@@ -1,17 +1,32 @@
 package server
 
+import (
+	"github.com/micro/go-micro/codec"
+	"github.com/micro/go-micro/transport"
+)
+
 type rpcRequest struct {
 	service     string
 	method      string
+	endpoint    string
 	contentType string
-	request     interface{}
+	socket      transport.Socket
+	codec       codec.Codec
+	header      map[string]string
+	body        []byte
+	rawBody     interface{}
 	stream      bool
+	first       bool
 }
 
 type rpcMessage struct {
 	topic       string
 	contentType string
 	payload     interface{}
+}
+
+func (r *rpcRequest) Codec() codec.Reader {
+	return r.codec
 }
 
 func (r *rpcRequest) ContentType() string {
@@ -26,8 +41,34 @@ func (r *rpcRequest) Method() string {
 	return r.method
 }
 
-func (r *rpcRequest) Request() interface{} {
-	return r.request
+func (r *rpcRequest) Endpoint() string {
+	return r.endpoint
+}
+
+func (r *rpcRequest) Header() map[string]string {
+	return r.header
+}
+
+func (r *rpcRequest) Body() interface{} {
+	return r.rawBody
+}
+
+func (r *rpcRequest) Read() ([]byte, error) {
+	// got a body
+	if r.first {
+		b := r.body
+		r.first = false
+		return b, nil
+	}
+
+	var msg transport.Message
+	err := r.socket.Recv(&msg)
+	if err != nil {
+		return nil, err
+	}
+	r.header = msg.Header
+
+	return msg.Body, nil
 }
 
 func (r *rpcRequest) Stream() bool {

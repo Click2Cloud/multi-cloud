@@ -37,12 +37,20 @@ func extractValue(v reflect.Type, d int) *registry.Value {
 			// if we can find a json tag use it
 			if tags := f.Tag.Get("json"); len(tags) > 0 {
 				parts := strings.Split(tags, ",")
+				if parts[0] == "-" || parts[0] == "omitempty" {
+					continue
+				}
 				val.Name = parts[0]
 			}
 
 			// if there's no name default it
 			if len(val.Name) == 0 {
 				val.Name = v.Field(i).Name
+			}
+
+			// still no name then continue
+			if len(val.Name) == 0 {
+				continue
 			}
 
 			arg.Values = append(arg.Values, val)
@@ -53,10 +61,6 @@ func extractValue(v reflect.Type, d int) *registry.Value {
 			p = p.Elem()
 		}
 		arg.Type = "[]" + p.Name()
-		val := extractValue(v.Elem(), d+1)
-		if val != nil {
-			arg.Values = append(arg.Values, val)
-		}
 	}
 
 	return arg

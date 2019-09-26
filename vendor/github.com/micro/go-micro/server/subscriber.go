@@ -11,6 +11,7 @@ import (
 	"github.com/micro/go-micro/codec"
 	"github.com/micro/go-micro/metadata"
 	"github.com/micro/go-micro/registry"
+	"github.com/micro/go-micro/util/buf"
 )
 
 const (
@@ -34,7 +35,10 @@ type subscriber struct {
 }
 
 func newSubscriber(topic string, sub interface{}, opts ...SubscriberOption) Subscriber {
-	var options SubscriberOptions
+	options := SubscriberOptions{
+		AutoAck: true,
+	}
+
 	for _, o := range opts {
 		o(&options)
 	}
@@ -162,19 +166,31 @@ func validateSubscriber(sub Subscriber) error {
 }
 
 func (s *rpcServer) createSubHandler(sb *subscriber, opts Options) broker.Handler {
-	return func(p broker.Publication) error {
+	return func(p broker.Event) error {
 		msg := p.Message()
+
+		// get codec
 		ct := msg.Header["Content-Type"]
+
+		// default content type
+		if len(ct) == 0 {
+			msg.Header["Content-Type"] = DefaultContentType
+			ct = DefaultContentType
+		}
+
+		// get codec
 		cf, err := s.newCodec(ct)
 		if err != nil {
 			return err
 		}
 
+		// copy headers
 		hdr := make(map[string]string)
 		for k, v := range msg.Header {
 			hdr[k] = v
 		}
-		delete(hdr, "Content-Type")
+
+		// create context
 		ctx := metadata.NewContext(context.Background(), hdr)
 
 		results := make(chan error, len(sb.handlers))
@@ -195,11 +211,11 @@ func (s *rpcServer) createSubHandler(sb *subscriber, opts Options) broker.Handle
 				req = req.Elem()
 			}
 
-			b := &buffer{bytes.NewBuffer(msg.Body)}
+			b := buf.New(bytes.NewBuffer(msg.Body))
 			co := cf(b)
 			defer co.Close()
 
-			if err := co.ReadHeader(&codec.Message{}, codec.Publication); err != nil {
+			if err := co.ReadHeader(&codec.Message{}, codec.Event); err != nil {
 				return err
 			}
 
@@ -229,9 +245,15 @@ func (s *rpcServer) createSubHandler(sb *subscriber, opts Options) broker.Handle
 				fn = opts.SubWrappers[i-1](fn)
 			}
 
-			s.wg.Add(1)
+			if s.wg != nil {
+				s.wg.Add(1)
+			}
+
 			go func() {
-				defer s.wg.Done()
+				if s.wg != nil {
+					defer s.wg.Done()
+				}
+
 				results <- fn(ctx, &rpcMessage{
 					topic:       sb.topic,
 					contentType: ct,
