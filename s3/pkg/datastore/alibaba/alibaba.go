@@ -62,6 +62,10 @@ func (ad *OSSAdapter) Put(ctx context.Context, stream io.Reader, object *pb.Obje
 	} else {
 		limitedDataReader = stream
 	}
+	
+	if strings.HasSuffix(object.ObjectKey, "/") {
+		limitedDataReader = strings.NewReader("folder")
+	}
 
 	md5Writer := md5.New()
 	dataReader := io.TeeReader(limitedDataReader, md5Writer)
