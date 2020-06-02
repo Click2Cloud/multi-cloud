@@ -24,7 +24,7 @@ BUILD_TGT := opensds-multicloud-$(VERSION)-linux-amd64
 
 all: build
 
-build: api backend s3 dataflow datamover
+build: api backend  dataflow datamover s3
 
 prebuild:
 	mkdir -p  $(BUILD_DIR)

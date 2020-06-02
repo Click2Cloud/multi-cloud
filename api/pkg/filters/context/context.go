@@ -15,7 +15,7 @@
 package context
 
 import (
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	c "github.com/opensds/multi-cloud/api/pkg/context"
 )
 

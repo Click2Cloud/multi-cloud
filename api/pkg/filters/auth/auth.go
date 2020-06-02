@@ -17,7 +17,7 @@ package auth
 import (
 	"os"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	c "github.com/opensds/multi-cloud/api/pkg/context"
 	log "github.com/sirupsen/logrus"
 )

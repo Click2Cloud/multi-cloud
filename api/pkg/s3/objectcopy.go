@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/emicklei/go-restful"
-	"github.com/micro/go-micro/client"
+	"github.com/emicklei/go-restful/v3"
+	"github.com/micro/go-micro/v2/client"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 	apiutils "github.com/opensds/multi-cloud/api/pkg/utils"
 	. "github.com/opensds/multi-cloud/s3/error"

@@ -24,7 +24,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	c "github.com/opensds/multi-cloud/api/pkg/context"
 	. "github.com/opensds/multi-cloud/api/pkg/filters/signature"
 	"github.com/opensds/multi-cloud/api/pkg/filters/signature/credentials"

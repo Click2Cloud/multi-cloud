@@ -15,8 +15,8 @@
 package s3
 
 import (
-	"github.com/emicklei/go-restful"
-	"github.com/micro/go-micro/client"
+	"github.com/emicklei/go-restful/v3"
+	"github.com/micro/go-micro/v2/client"
 )
 
 //RegisterRouter - route request to appropriate method

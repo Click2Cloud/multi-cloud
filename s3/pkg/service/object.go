@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/micro/go-micro/metadata"
+	"github.com/micro/go-micro/v2/metadata"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 	"github.com/opensds/multi-cloud/api/pkg/utils/constants"
 	utils2 "github.com/opensds/multi-cloud/dataflow/pkg/utils"
@@ -631,7 +631,7 @@ func (s *s3Service) CopyObject(ctx context.Context, in *pb.CopyObjectRequest, ou
 	targetObject.Location = targetBackendName
 	targetObject.TenantId = tenantId
 	// this is the default acl setting
-	targetObject.Acl = in.Acl
+	targetObject.Acl = targetBucket.Acl
 	// we only support copy data with sse but not support copy data without sse right now
 	targetObject.ServerSideEncryption = srcObject.ServerSideEncryption
 	if validTier(in.TargetTier) {

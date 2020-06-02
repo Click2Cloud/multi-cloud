@@ -162,6 +162,8 @@ github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFP
 github.com/ef-ds/deque v1.0.4-0.20190904040645-54cb57c252a1/go.mod h1:HvODWzv6Y6kBf3Ah2WzN1bHjDUezGLaAhwuWVwfpEJs=
 github.com/emicklei/go-restful v2.12.0+incompatible h1:SIvoTSbsMEwuM3dzFirLwKc4BH6VXP5CNf+G1FfJVr4=
 github.com/emicklei/go-restful v2.12.0+incompatible/go.mod h1:otzb+WCGbkyDHkqmQmT5YD2WR4BBwUdeQoFo8l/7tVs=
+github.com/emicklei/go-restful/v3 v3.1.0 h1:1fG5HXJ8OamNzYojuXeuF+jcaoHgttJVoEuLRilT7SQ=
+github.com/emicklei/go-restful/v3 v3.1.0/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
 github.com/emirpasic/gods v1.12.0 h1:QAUIPSaCu4G+POclxeqb3F+WPpdKqFGlw36+yOzGlrg=
 github.com/emirpasic/gods v1.12.0/go.mod h1:YfzfFFoVP/catgzJb4IKIqXjX78Ha8FMSDh3ymbK86o=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
@@ -447,8 +449,16 @@ github.com/micro/go-log v0.1.0/go.mod h1:qaFBF6d6Jk01Gz4cbMkCA2vVuLk3FSaLLjmEGrM
 github.com/micro/go-micro v1.16.0/go.mod h1:A0F58bHLh2m0LAI9QyhvmbN8c1cxhAZo3cM6s+iDsrM=
 github.com/micro/go-micro v1.18.0 h1:gP70EZVHpJuUIT0YWth192JmlIci+qMOEByHm83XE9E=
 github.com/micro/go-micro v1.18.0/go.mod h1:klwUJL1gkdY1MHFyz+fFJXn52dKcty4hoe95Mp571AA=
+github.com/micro/go-micro/v2 v2.5.0/go.mod h1:qz2UT4UFdFVs+qUGMuDK3xuHgude1BgntqQ29sbpPlE=
 github.com/micro/go-micro/v2 v2.6.0 h1:HH6uEqTu6pkBtAlwAqQW2sf33640iEa1s9puGIctpO0=
 github.com/micro/go-micro/v2 v2.6.0/go.mod h1:60HMKlDN4ShZDJRrlgdcAmkCWNhQbYv+CDG3r7iLE34=
+github.com/micro/go-plugins v2.0.1+incompatible h1:WYNrIeBhv+84ASevN22Z6ijGJf8bfMsdYUuuh9C8JOc=
+github.com/micro/go-plugins/registry/kubernetes v0.0.0-20200119172437-4fe21aa238fd h1:FrlK4kIbFDRyROigjF2Uhn6kN2zIzKNQcRucTrq+Yfg=
+github.com/micro/go-plugins/registry/kubernetes/v2 v2.5.0 h1:SJr/KhFMxSffmbR5li0Eec7tBxD6QXXCNAc+l4NGwPo=
+github.com/micro/go-plugins/registry/kubernetes/v2 v2.5.0/go.mod h1:55AAue9Fq9GF4vk/x8fBVV3MWTWymaGeDDU6nRoIhiU=
+github.com/micro/go-plugins/registry/mdns v0.0.0-20200119172437-4fe21aa238fd h1:m6k8r3d12PgK8VeMytaYgMPhN5dPnRkkEtI/qHq/sKE=
+github.com/micro/go-plugins/registry/mdns/v2 v2.5.0 h1:ugT1OyRbPKeumR0ImdWAJvziyzQFtTV9MAJ4LdbPehQ=
+github.com/micro/go-plugins/registry/mdns/v2 v2.5.0/go.mod h1:eKVqOAt6cqXxFIhXboHmhze/wsQOKD7yZBzPna+shz0=
 github.com/micro/mdns v0.3.0 h1:bYycYe+98AXR3s8Nq5qvt6C573uFTDPIYzJemWON0QE=
 github.com/micro/mdns v0.3.0/go.mod h1:KJ0dW7KmicXU2BV++qkLlmHYcVv7/hHnbtguSWt9Aoc=
 github.com/micro/protoc-gen-micro v1.0.0/go.mod h1:C8ij4DJhapBmypcT00AXdb0cZ675/3PqUO02buWWqbE=
@@ -769,6 +779,7 @@ golang.org/x/net v0.0.0-20191109021931-daa7c04131f5 h1:bHNaocaoJxYBo5cw41UyTMLjY
 golang.org/x/net v0.0.0-20191109021931-daa7c04131f5/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20200202094626-16171245cfb2/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
+golang.org/x/net v0.0.0-20200222125558-5a598a2470a0/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20200301022130-244492dfa37a h1:GuSPYbZzB5/dcLNCwLQLsg3obCJtX9IJhpXkvY7kzk0=
 golang.org/x/net v0.0.0-20200301022130-244492dfa37a/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20200506145744-7e3656a0809f h1:QBjCr1Fz5kw158VqdE9JfI9cJnl/ymnJWAdMuinqL7Y=

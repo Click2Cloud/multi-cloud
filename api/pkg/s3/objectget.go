@@ -20,8 +20,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/emicklei/go-restful"
-	"github.com/micro/go-micro/client"
+	"github.com/emicklei/go-restful/v3"
+	"github.com/micro/go-micro/v2/client"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 	. "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
 	"github.com/opensds/multi-cloud/api/pkg/utils"

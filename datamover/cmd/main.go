@@ -16,16 +16,32 @@ package main
 
 import (
 	"fmt"
+	"github.com/micro/go-micro/v2/registry"
+	"github.com/micro/go-micro/v2/registry/mdns"
+	"github.com/micro/go-plugins/registry/kubernetes/v2"
+	"os"
 
-	log "github.com/sirupsen/logrus"
-	"github.com/micro/go-micro"
-	datamover "github.com/opensds/multi-cloud/datamover/pkg"
+	"github.com/micro/go-micro/v2"
 	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
+	datamover "github.com/opensds/multi-cloud/datamover/pkg"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
+	//service := micro.NewService(
+	//	micro.Name("datamover"),
+	//)
+	regType := os.Getenv("MICRO_REGISTRY")
+	var reg registry.Registry
+	if regType == "mdns" {
+		reg = mdns.NewRegistry()
+	}
+	if regType == "kubernetes" {
+		reg = kubernetes.NewRegistry()
+	}
 	service := micro.NewService(
-		micro.Name("datamover"),
+		micro.Name("backend"),
+		micro.Registry(reg),
 	)
 
 	obs.InitLogs()

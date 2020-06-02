@@ -15,10 +15,11 @@
 package main
 
 import (
-	"os"
-
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful/v3"
+	"github.com/micro/go-micro/v2/registry"
 	"github.com/micro/go-micro/v2/web"
+	"github.com/micro/go-plugins/registry/kubernetes/v2"
+	"github.com/micro/go-plugins/registry/mdns/v2"
 	"github.com/opensds/multi-cloud/api/pkg/backend"
 	"github.com/opensds/multi-cloud/api/pkg/dataflow"
 	"github.com/opensds/multi-cloud/api/pkg/filters/auth"
@@ -26,8 +27,9 @@ import (
 	"github.com/opensds/multi-cloud/api/pkg/filters/logging"
 	"github.com/opensds/multi-cloud/api/pkg/filters/signature/signer"
 	"github.com/opensds/multi-cloud/api/pkg/s3"
-	log "github.com/sirupsen/logrus"
 	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
+	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 const (
@@ -35,12 +37,25 @@ const (
 )
 
 func main() {
+	//webService := web.NewService(
+	//	web.Name(serviceName),
+	//	web.Version("v0.1.0"),
+	//)
+	//webService.Init()
+	regType := os.Getenv("MICRO_REGISTRY")
+	var reg registry.Registry
+	if regType == "mdns" {
+		reg = mdns.NewRegistry()
+	}
+	if regType == "kubernetes" {
+		reg = kubernetes.NewRegistry()
+	}
+
 	webService := web.NewService(
 		web.Name(serviceName),
-		web.Version("v0.1.0"),
+		web.Registry(reg),
 	)
 	webService.Init()
-
 	obs.InitLogs()
 	wc := restful.NewContainer()
 

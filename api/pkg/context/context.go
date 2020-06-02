@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	log "github.com/sirupsen/logrus"
 )
 

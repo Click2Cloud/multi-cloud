@@ -20,7 +20,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/journeymidnight/yig/helper"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 	"github.com/opensds/multi-cloud/api/pkg/s3/datatype"

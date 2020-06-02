@@ -5,9 +5,10 @@ import (
 	"testing"
 
 	"github.com/opensds/multi-cloud/s3/pkg/helper"
-	log "github.com/sirupsen/logrus"
-        bus "github.com/opensds/multi-cloud/s3/pkg/messagebus"
+	//log "github.com/sirupsen/logrus"
+	bus "github.com/opensds/multi-cloud/s3/pkg/messagebus"
 	. "gopkg.in/check.v1"
+	"log"
 )
 
 func Test(t *testing.T) { TestingT(t) }

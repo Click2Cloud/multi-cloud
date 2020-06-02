@@ -15,20 +15,35 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
-	"github.com/micro/go-micro"
+	"github.com/micro/go-micro/v2"
+	"github.com/micro/go-micro/v2/registry"
+	"github.com/micro/go-plugins/registry/kubernetes/v2"
+	"github.com/micro/go-plugins/registry/mdns/v2"
+	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
 	handler "github.com/opensds/multi-cloud/dataflow/pkg"
 	"github.com/opensds/multi-cloud/dataflow/pkg/scheduler"
 	_ "github.com/opensds/multi-cloud/dataflow/pkg/scheduler/trigger/crontrigger"
 	pb "github.com/opensds/multi-cloud/dataflow/proto"
-	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
+	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 func main() {
+	//service := micro.NewService(
+	//	micro.Name("dataflow"),
+	//)
+	regType := os.Getenv("MICRO_REGISTRY")
+	var reg registry.Registry
+	if regType == "mdns" {
+		reg = mdns.NewRegistry()
+	}
+	if regType == "kubernetes" {
+		reg = kubernetes.NewRegistry()
+	}
 	service := micro.NewService(
 		micro.Name("dataflow"),
+		micro.Registry(reg),
 	)
-
 	obs.InitLogs()
 	log.Info("Init dataflow service.")
 	service.Init()
@@ -39,4 +54,3 @@ func main() {
 		log.Info(err)
 	}
 }
-

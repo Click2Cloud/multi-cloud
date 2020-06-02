@@ -16,7 +16,7 @@ package s3
 
 import (
 	"encoding/xml"
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 	"github.com/opensds/multi-cloud/api/pkg/policy"
 	"github.com/opensds/multi-cloud/s3/pkg/model"

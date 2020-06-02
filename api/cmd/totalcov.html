@@ -289,7 +289,7 @@
 package main
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         log "github.com/sirupsen/logrus"
         "github.com/micro/go-web"
         "github.com/opensds/multi-cloud/api/pkg/backend"
@@ -366,8 +366,8 @@ func main() <span class="cov8" title="1">{
 package backend
 
 import (
-        "github.com/emicklei/go-restful"
-        "github.com/micro/go-micro/client"
+        "github.com/emicklei/go-restful/v3"
+        "github.com/micro/go-micro/v2/client"
 )
 
 func RegisterRouter(ws *restful.WebService) <span class="cov8" title="1">{
@@ -409,9 +409,9 @@ import (
         "net/http"
         "strconv"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         log "github.com/sirupsen/logrus"
-        "github.com/micro/go-micro/client"
+        "github.com/micro/go-micro/v2/client"
         "github.com/opensds/multi-cloud/api/pkg/common"
         c "github.com/opensds/multi-cloud/api/pkg/context"
         "github.com/opensds/multi-cloud/api/pkg/policy"
@@ -735,8 +735,8 @@ import (
         "strconv"
         "strings"
 
-        "github.com/emicklei/go-restful"
-        "github.com/micro/go-micro/metadata"
+        "github.com/emicklei/go-restful/v3"
+        "github.com/micro/go-micro/v2/metadata"
         c "github.com/opensds/multi-cloud/api/pkg/context"
         log "github.com/sirupsen/logrus"
 )
@@ -897,7 +897,7 @@ import (
         "encoding/json"
         "reflect"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         log "github.com/sirupsen/logrus"
 )
 
@@ -1020,8 +1020,8 @@ func (ctx *Context) ToJson() string <span class="cov0" title="0">{
 package dataflow
 
 import (
-        "github.com/emicklei/go-restful"
-        "github.com/micro/go-micro/client"
+        "github.com/emicklei/go-restful/v3"
+        "github.com/micro/go-micro/v2/client"
 )
 
 func RegisterRouter(ws *restful.WebService) <span class="cov8" title="1">{
@@ -1078,9 +1078,9 @@ import (
         "io/ioutil"
         "net/http"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         log "github.com/sirupsen/logrus"
-        "github.com/micro/go-micro/client"
+        "github.com/micro/go-micro/v2/client"
         "github.com/opensds/multi-cloud/api/pkg/common"
         c "github.com/opensds/multi-cloud/api/pkg/context"
         "github.com/opensds/multi-cloud/api/pkg/policy"
@@ -1556,7 +1556,7 @@ package auth
 import (
         "os"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         log "github.com/sirupsen/logrus"
         c "github.com/opensds/multi-cloud/api/pkg/context"
 )
@@ -1624,7 +1624,7 @@ import (
         "strings"
         "time"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         log "github.com/sirupsen/logrus"
         "github.com/gophercloud/gophercloud"
         "github.com/gophercloud/gophercloud/openstack"
@@ -1774,7 +1774,7 @@ func (k *Keystone) setPolicyContext(req *restful.Request, res *restful.Response,
 package context
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         c "github.com/opensds/multi-cloud/api/pkg/context"
 )
 
@@ -1803,7 +1803,7 @@ func FilterFactory() restful.FilterFunction <span class="cov8" title="1">{
 package logging
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         log "github.com/sirupsen/logrus"
 )
 
@@ -2078,7 +2078,7 @@ import (
         "sort"
         "strings"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         log "github.com/sirupsen/logrus"
         c "github.com/opensds/multi-cloud/api/pkg/context"
         "github.com/opensds/multi-cloud/api/pkg/filters/signature/credentials"
@@ -2496,7 +2496,7 @@ import (
         "errors"
         "fmt"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         log "github.com/sirupsen/logrus"
 )
 
@@ -3184,7 +3184,7 @@ import (
         "os"
         "strings"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         log "github.com/sirupsen/logrus"
         "github.com/opensds/multi-cloud/api/pkg/context"
         "github.com/opensds/multi-cloud/api/pkg/model"
@@ -3381,7 +3381,7 @@ func Authorize(req *restful.Request, res *restful.Response, action string) bool 
 		<pre class="file" id="file18" style="display: none">package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         pb "github.com/opensds/multi-cloud/s3/proto"
         log "github.com/sirupsen/logrus"
@@ -3415,7 +3415,7 @@ func (s *APIService) AbortMultipartUpload(request *restful.Request, response *re
 import (
         "net/http"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         . "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
 )
@@ -3468,7 +3468,7 @@ import (
         "strconv"
         "time"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         . "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
         "github.com/opensds/multi-cloud/s3/pkg/meta/types"
         pb "github.com/opensds/multi-cloud/s3/proto"
@@ -3547,7 +3547,7 @@ import (
         "strconv"
         "time"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         . "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
         . "github.com/opensds/multi-cloud/s3/error"
         "github.com/opensds/multi-cloud/s3/pkg/helper"
@@ -3785,7 +3785,7 @@ import (
         "io/ioutil"
         "strings"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/journeymidnight/yig/helper"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
@@ -3895,7 +3895,7 @@ func (s *APIService) BucketAclGet(request *restful.Request, response *restful.Re
 package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/s3/proto"
         log "github.com/sirupsen/logrus"
@@ -3938,7 +3938,7 @@ import (
         "time"
         "unicode/utf8"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
         "github.com/opensds/multi-cloud/api/pkg/utils/constants"
@@ -4135,7 +4135,7 @@ func (s *APIService) HeadBucket(request *restful.Request, response *restful.Resp
 package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/s3/proto"
         log "github.com/sirupsen/logrus"
@@ -4175,7 +4175,7 @@ package s3
 
 import (
         "fmt"
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         . "github.com/opensds/multi-cloud/api/pkg/utils/constants"
         . "github.com/opensds/multi-cloud/s3/error"
@@ -4311,7 +4311,7 @@ import (
         "net/http"
         "sync"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         . "github.com/opensds/multi-cloud/api/pkg/utils/constants"
         . "github.com/opensds/multi-cloud/s3/error"
@@ -4564,7 +4564,7 @@ import (
         "strings"
         "time"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         c "github.com/opensds/multi-cloud/api/pkg/context"
         "github.com/opensds/multi-cloud/s3/error"
@@ -4669,7 +4669,7 @@ import (
         "net/http"
         "sync"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/s3/pkg/model"
         "github.com/opensds/multi-cloud/s3/proto"
@@ -4766,7 +4766,7 @@ package s3
 import (
         "crypto/md5"
         "encoding/xml"
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         . "github.com/opensds/multi-cloud/s3/error"
         "github.com/opensds/multi-cloud/s3/pkg/model"
@@ -4837,7 +4837,7 @@ import (
         "sort"
         "strings"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/s3/pkg/model"
         pb "github.com/opensds/multi-cloud/s3/proto"
@@ -5349,7 +5349,7 @@ import (
         "net/http"
         "strings"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         . "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
         . "github.com/opensds/multi-cloud/s3/error"
         "github.com/opensds/multi-cloud/s3/pkg/helper"
@@ -5491,7 +5491,7 @@ import (
         "encoding/xml"
         "time"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/api/pkg/policy"
         "github.com/opensds/multi-cloud/s3/pkg/model"
@@ -5568,7 +5568,7 @@ import (
         "net/url"
         "sort"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
         s3error "github.com/opensds/multi-cloud/s3/error"
@@ -5658,7 +5658,7 @@ func (s *APIService) ListBucketUploadRecords(request *restful.Request, response 
 		<pre class="file" id="file38" style="display: none">package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
         pb "github.com/opensds/multi-cloud/s3/proto"
@@ -5746,7 +5746,7 @@ package s3
 import (
         "encoding/xml"
         "net/http"
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         log "github.com/sirupsen/logrus"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/api/pkg/policy"
@@ -5803,7 +5803,7 @@ func (s *APIService) GetStorageClasses(request *restful.Request, response *restf
 package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         pb "github.com/opensds/multi-cloud/s3/proto"
         log "github.com/sirupsen/logrus"
@@ -6145,7 +6145,7 @@ import (
         "io/ioutil"
         "strings"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/journeymidnight/yig/helper"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
@@ -6262,8 +6262,8 @@ import (
         "strings"
         "time"
 
-        "github.com/emicklei/go-restful"
-        "github.com/micro/go-micro/client"
+        "github.com/emicklei/go-restful/v3"
+        "github.com/micro/go-micro/v2/client"
         "github.com/opensds/multi-cloud/api/pkg/common"
         . "github.com/opensds/multi-cloud/s3/error"
         "github.com/opensds/multi-cloud/s3/pkg/meta/types"
@@ -6472,7 +6472,7 @@ package s3
 import (
         "strings"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         . "github.com/opensds/multi-cloud/s3/error"
         "github.com/opensds/multi-cloud/s3/proto"
@@ -6545,8 +6545,8 @@ import (
         "net/url"
         "time"
 
-        "github.com/emicklei/go-restful"
-        "github.com/micro/go-micro/client"
+        "github.com/emicklei/go-restful/v3"
+        "github.com/micro/go-micro/v2/client"
         "github.com/opensds/multi-cloud/api/pkg/common"
         . "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
         s3error "github.com/opensds/multi-cloud/s3/error"
@@ -6786,7 +6786,7 @@ import (
         "strconv"
         "strings"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/journeymidnight/yig/helper"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
@@ -6959,7 +6959,7 @@ import (
         "net/url"
         "strconv"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/api/pkg/s3/datatype"
         "github.com/opensds/multi-cloud/s3/error"
@@ -7153,7 +7153,7 @@ import (
         "strconv"
         "strings"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/s3/error"
         "github.com/opensds/multi-cloud/s3/proto"
@@ -7346,7 +7346,7 @@ func getSize(request *restful.Request, response *restful.Response) (int64, error
 package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/policy"
 )
 
@@ -7392,7 +7392,7 @@ func (s *APIService) RouteBucketDelete(request *restful.Request, response *restf
 package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/policy"
 )
 
@@ -7440,7 +7440,7 @@ func (s *APIService) RouteBucketGet(request *restful.Request, response *restful.
 package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/policy"
 )
 
@@ -7472,7 +7472,7 @@ package s3
 import (
         "errors"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/policy"
         "net/http"
 )
@@ -7508,7 +7508,7 @@ func (s *APIService) RouteBucketPut(request *restful.Request, response *restful.
 		<pre class="file" id="file54" style="display: none">package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/policy"
 )
 
@@ -7541,7 +7541,7 @@ func (s *APIService) RouteObjectDelete(request *restful.Request, response *restf
 package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/policy"
 )
 
@@ -7576,7 +7576,7 @@ func (s *APIService) RouteObjectGet(request *restful.Request, response *restful.
 package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/policy"
 )
 
@@ -7608,7 +7608,7 @@ package s3
 import (
         "regexp"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         "github.com/opensds/multi-cloud/api/pkg/policy"
 )
@@ -7650,7 +7650,7 @@ func (s *APIService) RouteObjectPost(request *restful.Request, response *restful
 package s3
 
 import (
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/policy"
 )
 
@@ -7696,8 +7696,8 @@ func (s *APIService) RouteObjectPut(request *restful.Request, response *restful.
 package s3
 
 import (
-        "github.com/emicklei/go-restful"
-        "github.com/micro/go-micro/client"
+        "github.com/emicklei/go-restful/v3"
+        "github.com/micro/go-micro/v2/client"
 )
 
 //RegisterRouter - route request to appropriate method
@@ -7753,8 +7753,8 @@ import (
         "io/ioutil"
         "math"
 
-        "github.com/emicklei/go-restful"
-        "github.com/micro/go-micro/client"
+        "github.com/emicklei/go-restful/v3"
+        "github.com/micro/go-micro/v2/client"
         "github.com/opensds/multi-cloud/backend/proto"
         backendpb "github.com/opensds/multi-cloud/backend/proto"
         . "github.com/opensds/multi-cloud/s3/error"
@@ -7899,7 +7899,7 @@ import (
         "io"
         "strconv"
 
-        "github.com/emicklei/go-restful"
+        "github.com/emicklei/go-restful/v3"
         "github.com/opensds/multi-cloud/api/pkg/common"
         . "github.com/opensds/multi-cloud/s3/error"
         pb "github.com/opensds/multi-cloud/s3/proto"
@@ -12726,7 +12726,7 @@ import math "math"
 import (
         context "context"
 
-        client "github.com/micro/go-micro/client"
+        client "github.com/micro/go-micro/v2/client"
         server "github.com/micro/go-micro/server"
 )
 
@@ -13440,7 +13440,7 @@ import fmt "fmt"
 import math "math"
 
 import (
-        client "github.com/micro/go-micro/client"
+        client "github.com/micro/go-micro/v2/client"
         server "github.com/micro/go-micro/server"
         context "context"
 )
@@ -17628,7 +17628,7 @@ func MatchStorageClassIndex(storageClass string) (StorageClass, error) <span cla
 import (
         "context"
         "encoding/hex"
-        "github.com/micro/go-micro/metadata"
+        "github.com/micro/go-micro/v2/metadata"
         "github.com/opensds/multi-cloud/api/pkg/common"
         . "github.com/opensds/multi-cloud/s3/error"
         log "github.com/sirupsen/logrus"
@@ -18154,7 +18154,7 @@ import fmt "fmt"
 import math "math"
 
 import (
-        client "github.com/micro/go-micro/client"
+        client "github.com/micro/go-micro/v2/client"
         server "github.com/micro/go-micro/server"
         context "context"
 )

@@ -20,7 +20,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 	c "github.com/opensds/multi-cloud/api/pkg/context"
 	"github.com/opensds/multi-cloud/api/pkg/filters/signature"

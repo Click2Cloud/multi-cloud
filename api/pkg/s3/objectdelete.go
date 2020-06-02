@@ -17,7 +17,7 @@ package s3
 import (
 	"strings"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 	. "github.com/opensds/multi-cloud/s3/error"
 	"github.com/opensds/multi-cloud/s3/proto"

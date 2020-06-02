@@ -17,7 +17,7 @@ package s3
 import (
 	"errors"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/opensds/multi-cloud/api/pkg/policy"
 	"net/http"
 )

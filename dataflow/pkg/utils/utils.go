@@ -17,8 +17,8 @@ package utils
 import (
 	"context"
 	"errors"
-	"github.com/micro/go-log"
-	"github.com/micro/go-micro/metadata"
+	"github.com/micro/go-micro/v2/metadata"
+	"github.com/micro/go-micro/v2/util/log"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 )
 
