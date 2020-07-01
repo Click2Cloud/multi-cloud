@@ -23,7 +23,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 	"github.com/micro/go-micro/v2/client"
 	"github.com/opensds/multi-cloud/backend/proto"
-	backendpb "github.com/opensds/multi-cloud/backend/proto"
+	//backendpb "github.com/opensds/multi-cloud/backend/proto"
 	. "github.com/opensds/multi-cloud/s3/error"
 	"github.com/opensds/multi-cloud/s3/proto"
 	log "github.com/sirupsen/logrus"
@@ -115,7 +115,7 @@ func (s *APIService) getObjectMeta(ctx context.Context, bucketName, objectName, 
 func (s *APIService) isBackendExist(ctx context.Context, backendName string) bool {
 	flag := false
 
-	backendRep, backendErr := s.backendClient.ListBackend(ctx, &backendpb.ListBackendRequest{
+	backendRep, backendErr := s.backendClient.ListBackend(ctx, &backend.ListBackendRequest{
 		Offset: 0,
 		Limit:  math.MaxInt32,
 		Filter: map[string]string{"name": backendName}})
