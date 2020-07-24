@@ -17,8 +17,8 @@ package main
 import (
 	"fmt"
 	"github.com/micro/go-micro/v2/registry"
-	"github.com/micro/go-micro/v2/registry/mdns"
 	"github.com/micro/go-plugins/registry/kubernetes/v2"
+	"github.com/micro/go-plugins/registry/mdns/v2"
 	"os"
 
 	"github.com/micro/go-micro/v2"

@@ -7,7 +7,10 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Shopify/sarama v1.19.0
 	github.com/aliyun/aliyun-oss-go-sdk v2.0.8+incompatible
+	github.com/aws/aws-lambda-go v1.17.0 // indirect
 	github.com/aws/aws-sdk-go v1.30.26
+	github.com/aws/aws-sdk-go-v2 v0.23.0 // indirect
+	github.com/bradfitz/slice v0.0.0-20180809154707-2b758aa73013
 	github.com/bsm/sarama-cluster v2.1.15+incompatible
 	github.com/confluentinc/confluent-kafka-go v1.1.0
 	github.com/dustin/go-humanize v1.0.0
@@ -28,6 +31,7 @@ require (
 	github.com/micro/go-micro/v2 v2.6.0
 	github.com/micro/go-plugins/registry/kubernetes/v2 v2.5.0
 	github.com/micro/go-plugins/registry/mdns/v2 v2.5.0
+	github.com/olekukonko/tablewriter v0.0.4
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/robfig/cron v1.2.0
 	github.com/sirupsen/logrus v1.6.0
@@ -39,6 +43,7 @@ require (
 	github.com/webrtcn/s3client v0.0.0-20180425024203-6590fd04c8e8
 	github.com/xxtea/xxtea-go v0.0.0-20170828040851-35c4b17eecf6
 	go.uber.org/automaxprocs v1.3.0
+	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
 	golang.org/x/net v0.0.0-20200506145744-7e3656a0809f
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
