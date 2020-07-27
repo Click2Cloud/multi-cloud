@@ -3,10 +3,8 @@ module github.com/opensds/multi-cloud
 go 1.13
 
 require (
-	github.com/Azure/azure-pipeline-go v0.2.1
-	github.com/Azure/azure-sdk-for-go v32.4.0+incompatible
 	github.com/Azure/azure-storage-blob-go v0.8.0
-	github.com/Azure/azure-storage-file-go v0.7.0
+	github.com/Azure/azure-storage-file-go v0.7.0 // indirect
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Shopify/sarama v1.19.0
 	github.com/aliyun/aliyun-oss-go-sdk v2.0.8+incompatible
@@ -27,8 +25,11 @@ require (
 	github.com/hashicorp/vault/api v1.0.5-0.20190814205542-3b036e58e950
 	github.com/journeymidnight/radoshttpd v0.0.0-20190617133011-609666b51136
 	github.com/journeymidnight/yig v2.0.0+incompatible
+	github.com/mholt/certmagic v0.9.3 // indirect
 	github.com/micro/go-log v0.1.0
-	github.com/micro/go-micro/v2 v2.6.0
+	github.com/micro/go-micro/v2 v2.9.1
+	github.com/micro/go-plugins/registry/kubernetes/v2 v2.9.1
+	github.com/micro/go-plugins/registry/mdns/v2 v2.9.1
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/robfig/cron v1.2.0
 	github.com/sirupsen/logrus v1.6.0
@@ -40,7 +41,8 @@ require (
 	github.com/webrtcn/s3client v0.0.0-20180425024203-6590fd04c8e8
 	github.com/xxtea/xxtea-go v0.0.0-20170828040851-35c4b17eecf6
 	go.uber.org/automaxprocs v1.3.0
-	golang.org/x/net v0.0.0-20200506145744-7e3656a0809f
+	golang.org/x/net v0.0.0-20200520182314-0ba52f642ac2
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	gopkg.in/src-d/go-git.v4 v4.13.1 // indirect
 )

@@ -15,14 +15,16 @@
 package main
 
 import (
-	"os"
-
 	"github.com/emicklei/go-restful"
+	"github.com/micro/go-micro/v2/registry"
 	"github.com/micro/go-micro/v2/web"
+	"github.com/micro/go-plugins/registry/kubernetes/v2"
+	"github.com/micro/go-plugins/registry/mdns/v2"
 	"github.com/opensds/multi-cloud/api/pkg/backend"
-	"github.com/opensds/multi-cloud/api/pkg/block"
+	"os"
+	//"github.com/opensds/multi-cloud/api/pkg/block"
 	"github.com/opensds/multi-cloud/api/pkg/dataflow"
-	"github.com/opensds/multi-cloud/api/pkg/file"
+	//"github.com/opensds/multi-cloud/api/pkg/file"
 	"github.com/opensds/multi-cloud/api/pkg/filters/auth"
 	"github.com/opensds/multi-cloud/api/pkg/filters/context"
 	"github.com/opensds/multi-cloud/api/pkg/filters/logging"
@@ -37,8 +39,17 @@ const (
 )
 
 func main() {
+	regType := os.Getenv("MICRO_REGISTRY")
+	var reg registry.Registry
+	if regType == "mdns" {
+		reg = mdns.NewRegistry()
+	}
+	if regType == "kubernetes" {
+		reg = kubernetes.NewRegistry()
+	}
 	webService := web.NewService(
 		web.Name(serviceName),
+		web.Registry(reg),
 		web.Version("v0.1.0"),
 	)
 	webService.Init()
@@ -67,8 +78,8 @@ func main() {
 
 		backend.RegisterRouter(ws)
 		dataflow.RegisterRouter(ws)
-		block.RegisterRouter(ws)
-		file.RegisterRouter(ws)
+		//block.RegisterRouter(ws)
+		//file.RegisterRouter(ws)
 		// add filter for authentication context
 		ws.Filter(logging.FilterFactory())
 		ws.Filter(context.FilterFactory())

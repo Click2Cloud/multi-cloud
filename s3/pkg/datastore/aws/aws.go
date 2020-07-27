@@ -223,7 +223,7 @@ func (ad *AwsAdapter) InitMultipartUpload(ctx context.Context, object *pb.Object
 	svc := awss3.New(ad.session)
 	res, err := svc.CreateMultipartUpload(multiUpInput)
 	if err != nil {
-		log.Fatalf("init multipart upload[AWS S3] failed, err:%v\n", err)
+		log.Errorf("init multipart upload[AWS S3] failed, err:%v\n", err)
 		return nil, ErrBackendInitMultipartFailed
 	} else {
 		log.Infof("init multipart upload[AWS S3] succeed, UploadId:%s\n", *res.UploadId)

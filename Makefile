@@ -20,11 +20,11 @@ VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
              --always --dirty --abbrev=8)
 BUILD_TGT := soda-multicloud-$(VERSION)-linux-amd64
 
-.PHONY: all build prebuild api backend s3 dataflow block file docker clean
+.PHONY: all build prebuild api backend s3 dataflow docker clean
 
 all: build
 
-build: api backend s3 dataflow datamover block file
+build: api backend s3 dataflow datamover
 
 prebuild:
 	mkdir -p  $(BUILD_DIR)
@@ -44,12 +44,6 @@ dataflow: prebuild
 datamover: prebuild
 	CGO_ENABLED=0 GOOS=linux go build -ldflags '-w -s -extldflags "-static"' -o $(BUILD_DIR)/datamover github.com/opensds/multi-cloud/datamover/cmd
 
-file: prebuild
-	CGO_ENABLED=0 GOOS=linux go build -ldflags '-w -s -extldflags "-static"' -o $(BUILD_DIR)/file github.com/opensds/multi-cloud/file/cmd
-
-block: prebuild
-	CGO_ENABLED=0 GOOS=linux go build -ldflags '-w -s -extldflags "-static"' -o $(BUILD_DIR)/block github.com/opensds/multi-cloud/block/cmd
-
 docker: build
 
 	cp $(BUILD_DIR)/api api
@@ -59,14 +53,6 @@ docker: build
 	cp $(BUILD_DIR)/backend backend
 	chmod 755 backend/backend
 	docker build backend -t sodafoundation/multi-cloud-backend:latest
-
-	cp $(BUILD_DIR)/file file
-	chmod 755 file/file
-	docker build file -t sodafoundation/multi-cloud-file:latest
-
-	cp $(BUILD_DIR)/block block
-	chmod 755 block/block
-	docker build block -t sodafoundation/multi-cloud-block:latest
 
 	cp $(BUILD_DIR)/s3 s3
 	chmod 755 s3/s3
@@ -85,7 +71,7 @@ goimports:
 	goimports -w $(shell go list -f {{.Dir}} ./... |grep -v /vendor/)
 
 clean:
-	rm -rf $(BUILD_DIR) api/api backend/backend dataflow/dataflow datamover/datamover s3/s3 block/block file/file
+	rm -rf $(BUILD_DIR) api/api backend/backend dataflow/dataflow datamover/datamover s3/s3
 
 version:
 	@echo ${VERSION}
@@ -99,8 +85,6 @@ dist: build
 	cp ../s3 $(BUILD_TGT)/bin/ && \
 	cp ../dataflow $(BUILD_TGT)/bin/ && \
 	cp ../datamover $(BUILD_TGT)/bin/ && \
-	cp ../block $(BUILD_TGT)/bin/ && \
-	cp ../file $(BUILD_TGT)/bin/ && \
 	cp $(BASE_DIR)/LICENSE $(BUILD_TGT) && \
 	zip -r $(DIST_DIR)/$(BUILD_TGT).zip $(BUILD_TGT) && \
 	tar zcvf $(DIST_DIR)/$(BUILD_TGT).tar.gz $(BUILD_TGT)

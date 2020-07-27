@@ -16,8 +16,12 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/micro/go-micro/v2"
+	"github.com/micro/go-micro/v2/registry"
+	"github.com/micro/go-plugins/registry/kubernetes/v2"
+	"github.com/micro/go-plugins/registry/mdns/v2"
 	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
 	_ "github.com/opensds/multi-cloud/s3/pkg/datastore"
 	"github.com/opensds/multi-cloud/s3/pkg/datastore/driver"
@@ -32,8 +36,18 @@ import (
 )
 
 func main() {
+
+	regType := os.Getenv("MICRO_REGISTRY")
+	var reg registry.Registry
+	if regType == "mdns" {
+		reg = mdns.NewRegistry()
+	}
+	if regType == "kubernetes" {
+		reg = kubernetes.NewRegistry()
+	}
 	service := micro.NewService(
 		micro.Name("s3"),
+		micro.Registry(reg),
 	)
 
 	obs.InitLogs()
