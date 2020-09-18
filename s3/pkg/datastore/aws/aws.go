@@ -201,6 +201,35 @@ func (ad *AwsAdapter) ChangeStorageClass(ctx context.Context, object *pb.Object,
 	log.Infof("change storage class[AWS S3] of object[%s] to %s succeed.\n", objectId, *newClass)
 	return nil
 }
+func (ad *AwsAdapter) RestoreObject(ctx context.Context, RequestRestore *pb.RestoreObjectInput) (*pb.BaseResponse, error) {
+	objectId := RequestRestore.Key
+	svc := awss3.New(ad.session)
+
+	restoreReq := &awss3.RestoreRequest{
+		Days:                 aws.Int64(RequestRestore.Days),
+		Description:          nil,
+		GlacierJobParameters: nil,
+		OutputLocation:       nil,
+		SelectParameters:     nil,
+		Tier:                 aws.String(RequestRestore.Tier),
+		Type:                 aws.String(RequestRestore.Type),
+	}
+	input := &awss3.RestoreObjectInput{
+		Bucket:         aws.String(ad.backend.BucketName),
+		Key:            aws.String(objectId),
+		RestoreRequest: restoreReq,
+	}
+	input.Validate()
+	_, err := svc.RestoreObject(input)
+	if err != nil {
+		log.Errorf("Restore of [AWS S3] of object[%s] is failed: %v.\n", objectId, err)
+		return nil, err
+
+	}
+
+	log.Infof("Restore of [AWS S3] of object[%s] to %s succeed.\n", objectId)
+	return nil, nil
+}
 
 func (ad *AwsAdapter) InitMultipartUpload(ctx context.Context, object *pb.Object) (*pb.MultipartUpload, error) {
 	bucket := ad.backend.BucketName

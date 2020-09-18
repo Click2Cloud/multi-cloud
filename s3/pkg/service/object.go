@@ -52,6 +52,65 @@ func (s *s3Service) UpdateObject(ctx context.Context, in *pb.Object, out *pb.Bas
 	return nil
 }
 
+func (s *s3Service) RestoreObject(ctx context.Context, in *pb.RestoreObjectInput, out *pb.BaseResponse) error {
+	log.Infoln("RestoreObject is called in s3 service.")
+
+	bucketName := in.Bucket
+	objectName := in.Key
+
+	var err error
+
+	object, err := s.MetaStorage.GetObject(ctx, bucketName, objectName, "", true)
+	if err != nil {
+		log.Errorln("failed to get object info from meta storage. err:", err)
+		return err
+	}
+
+	bucket, err := s.MetaStorage.GetBucket(ctx, bucketName, true)
+	if err != nil {
+		log.Errorln("failed to get bucket from meta storage. err:", err)
+		return err
+	}
+
+	isAdmin, tenantId, _, err := util.GetCredentialFromCtx(ctx)
+	if err != nil && isAdmin == false {
+		log.Error("get tenant id failed")
+		err = ErrInternalError
+		return nil
+	}
+
+	err = s.checkGetObjectRights(ctx, isAdmin, tenantId, bucket.Bucket, object.Object)
+	if err != nil {
+		log.Errorln("failed to check source object rights. err:", err)
+		return err
+	}
+
+	backendName := bucket.DefaultLocation
+	if object.Location != "" {
+		backendName = object.Location
+	}
+	// incase get backend failed
+	ctx = utils.SetRepresentTenant(ctx, tenantId, bucket.TenantId)
+	// if this object has only one part
+	backend, err := utils.GetBackend(ctx, s.backendClient, backendName)
+	if err != nil {
+		log.Errorln("unable to get backend. err:", err)
+		return err
+	}
+	sd, err := driver.CreateStorageDriver(backend.Type, backend)
+	if err != nil {
+		log.Errorln("failed to create storage driver. err:", err)
+		return err
+	}
+	//log.Infof("get object offset %v, length %v", offset, length)
+	_, err = sd.RestoreObject(ctx, in)
+	if err != nil {
+		log.Errorln("failed to get data. err:", err)
+		return err
+	}
+	return nil
+}
+
 type DataStreamRecv interface {
 	Recv() (*pb.PutDataStream, error)
 }

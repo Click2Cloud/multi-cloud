@@ -46,7 +46,7 @@ service S3 {
     rpc ListBucketUploadRecords (ListBucketUploadRequest) returns (ListBucketUploadResponse) {
     }
 
-    rpc InitMultipartUpload (InitMultiPartRequest) returns (InitMultiPartResponse) {
+        rpc InitMultipartUpload (InitMultiPartRequest) returns (InitMultiPartResponse) {
     }
     rpc AbortMultipartUpload (AbortMultipartRequest) returns (BaseResponse) {
     }
@@ -101,10 +101,20 @@ service S3 {
     }
     rpc HeadBucket (BaseRequest) returns (Bucket) {
     }
+    rpc RestoreObject (RestoreObjectInput) returns (BaseResponse) {
+    }
+}
+
+message RestoreObjectInput {
+    string Bucket = 1;
+    string Key = 2;
+    string VersionId = 3;
+    int64 Days = 4;
+    string Tier = 5;
+    string Type = 6;
 }
 
 message ListObjectPartsRequest {
-    string bucketName = 1;
     string objectKey = 2;
     string encodingType = 3;
     string uploadId = 4;

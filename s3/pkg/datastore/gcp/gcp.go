@@ -39,6 +39,10 @@ type GcsAdapter struct {
 	session *s3client.Client
 }
 
+func (ad *GcsAdapter) RestoreObject(ctx context.Context, object *pb.RestoreObjectInput) (*pb.BaseResponse, error) {
+	panic("implement me")
+}
+
 func (ad *GcsAdapter) Put(ctx context.Context, stream io.Reader, object *pb.Object) (dscommon.PutResult, error) {
 	bucketName := ad.backend.BucketName
 	objectId := object.BucketName + "/" + object.ObjectKey

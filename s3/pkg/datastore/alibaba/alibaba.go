@@ -41,6 +41,10 @@ type OSSAdapter struct {
 	client  *oss.Client
 }
 
+func (ad *OSSAdapter) RestoreObject(ctx context.Context, object *pb.RestoreObjectInput) (*pb.BaseResponse, error) {
+	panic("implement me")
+}
+
 func (ad *OSSAdapter) Put(ctx context.Context, stream io.Reader, object *pb.Object) (dscommon.PutResult, error) {
 
 	bucket := ad.backend.BucketName

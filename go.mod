@@ -29,6 +29,7 @@ require (
 	github.com/journeymidnight/yig v2.0.0+incompatible
 	github.com/micro/go-log v0.1.0
 	github.com/micro/go-micro/v2 v2.6.0
+	github.com/micro/protoc-gen-micro v1.0.0 // indirect
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/robfig/cron v1.2.0
 	github.com/sirupsen/logrus v1.6.0
