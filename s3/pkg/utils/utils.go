@@ -76,7 +76,7 @@ const (
 	OSTYPE_CEPH          = "ceph-s3"
 	OSTYPE_FUSIONSTORAGE = "fusionstorage-object"
 	OSTYPE_ALIBABA       = "alibaba-oss"
-	OSTYPE_ORANGE        = "obs-oss"
+	OSTYPE_ORANGE        = "orange"
 )
 
 const (
