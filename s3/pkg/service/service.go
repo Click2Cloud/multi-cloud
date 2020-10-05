@@ -104,7 +104,19 @@ func loadAWSDefault(i2e *map[string]*Int2String, e2i *map[string]*String2Int) {
 	n2t[AWS_GLACIER] = Tier999
 	(*e2i)[OSTYPE_AWS] = &n2t
 }
+func loadOrangeDefault(i2e *map[string]*Int2String, e2i *map[string]*String2Int) {
+	t2n := make(Int2String)
+	t2n[Tier1] = ORANGE_STANDARD
+	t2n[Tier99] = ORANGE_WARM
+	t2n[Tier999] = ORANGE_COLD
+	(*i2e)[OSTYPE_ORANGE] = &t2n
 
+	n2t := make(String2Int)
+	n2t[ORANGE_STANDARD] = Tier1
+	n2t[ORANGE_WARM] = Tier99
+	n2t[ORANGE_COLD] = Tier999
+	(*e2i)[OSTYPE_ORANGE] = &n2t
+}
 func loadAlibabaDefault(i2e *map[string]*Int2String, e2i *map[string]*String2Int) {
 	t2n := make(Int2String)
 	t2n[Tier1] = ALIBABA_STANDARD

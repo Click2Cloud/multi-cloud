@@ -219,6 +219,10 @@ func (b *backendService) ListType(ctx context.Context, in *pb.ListTypeRequest, o
 			Name:        constants.BackendTypeAzureFile,
 			Description: "Azure File Service",
 		},
+		{
+			Name:        constants.BackendTypeOrange,
+			Description: "Orange OSS Object Storage",
+		},
 	}
 
 	// Filter by name
