@@ -242,6 +242,7 @@ func loadDefaultStorageClass() error {
 	loadCephDefault(&Int2ExtTierMap, &Ext2IntTierMap)
 	loadFusionStroageDefault(&Int2ExtTierMap, &Ext2IntTierMap)
 	loadAlibabaDefault(&Int2ExtTierMap, &Ext2IntTierMap)
+	loadOrangeDefault(&Int2ExtTierMap, &Ext2IntTierMap)
 
 	log.Infof("Int2ExtTierMap:%v\n", Int2ExtTierMap)
 	log.Infof("Ext2IntTierMap:%v\n", Ext2IntTierMap)
