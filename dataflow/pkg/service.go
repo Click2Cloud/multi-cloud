@@ -41,10 +41,8 @@ func (b *dataflowService) ChangeStatus(ctx context.Context, request *pb.ChangeSt
 	jobid := request.ChangeStatus.JobId
 	err := db.DbAdapter.ChangeStatus(jobid, status)
 	if err != nil {
-		response.Err = "Error while changing status of object"
-		response.ChangeStatus.JobId = jobid
+		return err
 	}
-
 	return nil
 }
 
