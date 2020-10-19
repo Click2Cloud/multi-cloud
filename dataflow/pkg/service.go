@@ -36,6 +36,16 @@ import (
 
 type dataflowService struct{}
 
+func (b *dataflowService) ChangeStatus(ctx context.Context, request *pb.ChangeStatusRequest, response *pb.ChangeStatusResponse) error {
+	status := request.ChangeStatus.Status
+	jobid := request.ChangeStatus.JobId
+	err := db.DbAdapter.ChangeStatus(jobid, status)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func NewDataFlowService() pb.DataFlowHandler {
 	host := os.Getenv("DB_HOST")
 	dbstor := Database{Credential: "unkonwn", Driver: "mongodb", Endpoint: host}

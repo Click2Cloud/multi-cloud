@@ -87,9 +87,11 @@ func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th c
 			continue
 		}
 		log.Infof("************Begin to move obj(key:%s)\n", objs[i].ObjectKey)
-
+		status := db.DbAdapter.GetJobStatus(string(job.Id))
 		//Create one routine
-		go migrate(ctx, objs[i], capa, th, req, job)
+		if status != "Abort" {
+			go migrate(ctx, objs[i], capa, th, req, job)
+		}
 		th <- 1
 		log.Infof("doMigrate: produce 1 routine, len(th):%d.\n", len(th))
 	}
@@ -99,6 +101,11 @@ func CopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, jo
 	log.Infof("*****Move object, size is %d.\n", obj.Size)
 	if obj.Size <= 0 {
 		return nil
+	}
+	status := db.DbAdapter.GetJobStatus(string(job.Id))
+
+	if status == "Abort" {
+		return errors.New("Aborted")
 	}
 
 	req := &osdss3.CopyObjectRequest{
@@ -141,6 +148,11 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		if i+1 == partCount {
 			currPartSize = obj.Size - offset
 		}
+		status := db.DbAdapter.GetJobStatus(string(job.Id))
+		if status == "Abort" {
+			err = errors.New("Aborted")
+			break
+		}
 
 		if partNumber == 1 {
 			// init upload
@@ -171,8 +183,16 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		tmoutSec := currPartSize / MiniSpeed
 		opt := client.WithRequestTimeout(time.Duration(tmoutSec) * time.Second)
 		for try < 3 { // try 3 times in case network is not stable
+			status := db.DbAdapter.GetJobStatus(string(job.Id))
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
-			rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
+			if status != "Abort" {
+				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
+
+			} else {
+				err = errors.New("Aborted")
+				break
+			}
+
 			if err == nil {
 				log.Debugln("copy part succeed")
 				break

@@ -746,3 +746,27 @@ func (ad *adapter) ListJob(ctx context.Context, limit int, offset int, query int
 	}
 	return jobs, nil
 }
+
+func (ad *adapter) ChangeStatus(jobId string, status string) error {
+	ss := ad.s.Copy()
+	defer ss.Close()
+	c := ss.DB(DataBaseName).C(CollJob)
+	j := Job{}
+	err := c.Find(bson.M{"_id": bson.ObjectIdHex(jobId)}).One(&j)
+	if err != nil {
+		log.Errorf("Change status failed [id:%v] before changing status , err:%v\n", jobId, err)
+
+		return errors.New("Change status failed  before update it.")
+	}
+	j.EndTime = time.Now()
+	j.Status = status
+
+	err = c.Update(bson.M{"_id": j.Id}, &j)
+	if err != nil {
+		log.Errorf("Update job in database failed, err:%v\n", err)
+		return errors.New("change status in database failed.")
+	}
+
+	log.Info("change status in database succeed.")
+	return nil
+}
