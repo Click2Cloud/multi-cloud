@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,21 +15,21 @@
 package job
 
 import (
-	"github.com/micro/go-log"
-	"github.com/opensds/multi-cloud/api/pkg/filters/context"
+	"context"
 	"github.com/opensds/multi-cloud/dataflow/pkg/db"
 	. "github.com/opensds/multi-cloud/dataflow/pkg/model"
+	log "github.com/sirupsen/logrus"
 )
 
-func Create(ctx *context.Context, job *Job) (*Job, error) {
+func Create(ctx context.Context, job *Job) (*Job, error) {
 	return db.DbAdapter.CreateJob(ctx, job)
 }
 
-func Get(ctx *context.Context, id string) (*Job, error) {
-	log.Logf("get job %s", id)
+func Get(ctx context.Context, id string) (*Job, error) {
+	log.Infof("get job %s", id)
 	return db.DbAdapter.GetJob(ctx, id)
 }
 
-func List(ctx *context.Context, limit int, offset int, filter interface{}) ([]Job, error) {
+func List(ctx context.Context, limit int, offset int, filter interface{}) ([]Job, error) {
 	return db.DbAdapter.ListJob(ctx, limit, offset, filter)
 }

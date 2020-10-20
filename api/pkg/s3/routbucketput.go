@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,17 +16,20 @@ package s3
 
 import (
 	"github.com/emicklei/go-restful"
-	"github.com/opensds/multi-cloud/api/pkg/policy"
+	"github.com/opensds/multi-cloud/api/pkg/filters/signature"
 )
 
 func (s *APIService) RouteBucketPut(request *restful.Request, response *restful.Response) {
-	if !policy.Authorize(request, response, "routbucket:put") {
+	err := signature.PayloadCheck(request, response)
+	if err != nil {
+		WriteErrorResponse(response, request, err)
 		return
 	}
+
 	if IsQuery(request, "acl") {
-		//TODO
+		s.BucketAclPut(request, response)
 	} else if IsQuery(request, "versioning") {
-		//TODO
+		s.BucketVersioningPut(request, response)
 	} else if IsQuery(request, "website") {
 		//TODO
 	} else if IsQuery(request, "cors") {
@@ -36,8 +39,9 @@ func (s *APIService) RouteBucketPut(request *restful.Request, response *restful.
 		//TODO
 
 	} else if IsQuery(request, "lifecycle") {
-		//TODO
-
+		s.BucketLifecyclePut(request, response)
+	} else if IsQuery(request, "DefaultEncryption") {
+		s.BucketSSEPut(request, response)
 	} else {
 		s.BucketPut(request, response)
 	}

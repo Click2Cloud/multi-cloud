@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import (
 	"fmt"
 
 	"github.com/emicklei/go-restful"
-	log "github.com/golang/glog"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

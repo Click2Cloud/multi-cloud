@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +16,15 @@ package constants
 
 const (
 	BackendTypeAws       = "aws-s3"
+	BackendTypeAwsFile   = "aws-file"
+	BackendTypeIBMCos    = "ibm-cos"
 	BackendTypeObs       = "hw-obs"
 	BackendTypeAzure     = "azure-blob"
+	BackendTypeAzureFile = "azure-file"
 	BackendTypeCeph      = "ceph-s3"
+	BackendTypeGcs       = "gcp-s3"
 	BackendFusionStorage = "fusionstorage-object"
+	BackendTypeYIGS3     = "yig"
+	BackendTypeAlibaba   = "alibaba-oss"
+	BackendTypeOrange    = "orange"
 )

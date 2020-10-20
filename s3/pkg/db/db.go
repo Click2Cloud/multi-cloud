@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 package db
 
 import (
+	"context"
 	"fmt"
 
-	. "github.com/opensds/multi-cloud/dataflow/pkg/utils"
 	"github.com/opensds/multi-cloud/s3/pkg/db/drivers/mongo"
 	. "github.com/opensds/multi-cloud/s3/pkg/exception"
+	. "github.com/opensds/multi-cloud/s3/pkg/utils"
 	pb "github.com/opensds/multi-cloud/s3/proto"
 )
 
@@ -57,14 +58,18 @@ func Exit(db *Database) {
 }
 
 type DBAdapter interface {
-	CreateBucket(bucket *pb.Bucket) S3Error
-	DeleteBucket(name string) S3Error
-	UpdateBucket(bucket *pb.Bucket) S3Error
-	GetBucketByName(name string, out *pb.Bucket) S3Error
-	ListBuckets(in *pb.BaseRequest, out *[]pb.Bucket) S3Error
-	CreateObject(in *pb.Object) S3Error
-	UpdateObject(in *pb.Object) S3Error
-	DeleteObject(in *pb.DeleteObjectInput) S3Error
-	GetObject(in *pb.GetObjectInput, out *pb.Object) S3Error
-	ListObjects(in *pb.ListObjectsRequest, out *[]pb.Object) S3Error
+	CreateBucket(ctx context.Context, bucket *pb.Bucket) S3Error
+	DeleteBucket(ctx context.Context, name string) S3Error
+	UpdateBucket(ctx context.Context, bucket *pb.Bucket) S3Error
+	GetBucketByName(ctx context.Context, name string, out *pb.Bucket) S3Error
+	ListBuckets(ctx context.Context, in *pb.BaseRequest, out *[]pb.Bucket) S3Error
+	CreateObject(ctx context.Context, in *pb.Object) S3Error
+	UpdateObject(ctx context.Context, in *pb.Object) S3Error
+	DeleteObject(ctx context.Context, in *pb.DeleteObjectInput) S3Error
+	GetObject(ctx context.Context, in *pb.GetObjectInput, out *pb.Object) S3Error
+	CountObjects(ctx context.Context, in *pb.ListObjectsRequest, out *ObjsCountInfo) S3Error
+	UpdateObjMeta(ctx context.Context, objKey *string, bucketName *string, lastmod int64, setting map[string]interface{}) S3Error
+	AddMultipartUpload(ctx context.Context, record *pb.MultipartUploadRecord) S3Error
+	DeleteMultipartUpload(ctx context.Context, record *pb.MultipartUploadRecord) S3Error
+	//ListUploadRecords(ctx context.Context, in *pb.ListMultipartUploadRequest, out *[]pb.MultipartUploadRecord) S3Error
 }

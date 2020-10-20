@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+# Copyright 2019 The OpenSDS Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ DIST_DIR := $(BASE_DIR)/build/dist
 VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
 	     git describe --match=$(git rev-parse --short=8 HEAD) \
              --always --dirty --abbrev=8)
-BUILD_TGT := opensds-multicloud-$(VERSION)-linux-amd64
+BUILD_TGT := soda-multicloud-$(VERSION)-linux-amd64
 
 .PHONY: all build prebuild api backend s3 dataflow docker clean
 
@@ -30,44 +30,48 @@ prebuild:
 	mkdir -p  $(BUILD_DIR)
 
 api: prebuild
-	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o $(BUILD_DIR)/api github.com/opensds/multi-cloud/api/cmd
+	CGO_ENABLED=0 GOOS=linux go build -ldflags '-w -s -extldflags "-static"' -o $(BUILD_DIR)/api github.com/opensds/multi-cloud/api/cmd
 
 backend: prebuild
-	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o $(BUILD_DIR)/backend github.com/opensds/multi-cloud/backend/cmd
+	CGO_ENABLED=0 GOOS=linux go build -ldflags '-w -s -extldflags "-static"' -o $(BUILD_DIR)/backend github.com/opensds/multi-cloud/backend/cmd
 
 s3: prebuild
-	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o $(BUILD_DIR)/s3 github.com/opensds/multi-cloud/s3/cmd
+	CGO_ENABLED=1 GOOS=linux go build -ldflags '-w -s -extldflags "-dynamic"' -o $(BUILD_DIR)/s3 github.com/opensds/multi-cloud/s3/cmd
 
 dataflow: prebuild
-	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o $(BUILD_DIR)/dataflow github.com/opensds/multi-cloud/dataflow/cmd
+	CGO_ENABLED=0 GOOS=linux go build -ldflags '-w -s -extldflags "-static"' -o $(BUILD_DIR)/dataflow github.com/opensds/multi-cloud/dataflow/cmd
 
 datamover: prebuild
-	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o $(BUILD_DIR)/datamover github.com/opensds/multi-cloud/datamover/cmd
+	CGO_ENABLED=0 GOOS=linux go build -ldflags '-w -s -extldflags "-static"' -o $(BUILD_DIR)/datamover github.com/opensds/multi-cloud/datamover/cmd
 
 docker: build
 
 	cp $(BUILD_DIR)/api api
 	chmod 755 api/api
-	docker build api -t opensdsio/multi-cloud-api:latest
+	docker build api -t sodafoundation/multi-cloud-api:latest
 
 	cp $(BUILD_DIR)/backend backend
 	chmod 755 backend/backend
-	docker build backend -t opensdsio/multi-cloud-backend:latest
+	docker build backend -t sodafoundation/multi-cloud-backend:latest
 
 	cp $(BUILD_DIR)/s3 s3
 	chmod 755 s3/s3
-	docker build s3 -t opensdsio/multi-cloud-s3:latest
+	chmod 755 s3/initdb.sh
+	docker build s3 -t sodafoundation/multi-cloud-s3:latest
 
 	cp $(BUILD_DIR)/dataflow dataflow
 	chmod 755 dataflow/dataflow
-	docker build dataflow -t opensdsio/multi-cloud-dataflow:latest
+	docker build dataflow -t sodafoundation/multi-cloud-dataflow:latest
 
 	cp $(BUILD_DIR)/datamover datamover
 	chmod 755 datamover/datamover
-	docker build datamover -t opensdsio/multi-cloud-datamover:latest
+	docker build datamover -t sodafoundation/multi-cloud-datamover:latest
+
+goimports:
+	goimports -w $(shell go list -f {{.Dir}} ./... |grep -v /vendor/)
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) api/api backend/backend dataflow/dataflow datamover/datamover s3/s3
 
 version:
 	@echo ${VERSION}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@ package logging
 
 import (
 	"github.com/emicklei/go-restful"
-	"github.com/micro/go-log"
+	log "github.com/sirupsen/logrus"
 )
 
 func FilterFactory() restful.FilterFunction {
 	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
-		log.Logf("\033[32m[D] %s -- %s %s\033[0m\n", req.Request.RemoteAddr, req.Request.Method,
+		log.Infof("\033[32m[D] %s -- %s %s\033[0m\n", req.Request.RemoteAddr, req.Request.Method,
 			req.Request.URL)
 		chain.ProcessFilter(req, resp)
 	}

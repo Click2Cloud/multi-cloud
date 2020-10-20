@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,23 +15,62 @@
 package mongo
 
 import (
+	"context"
+	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/micro/go-log"
+	"github.com/opensds/multi-cloud/api/pkg/common"
 	. "github.com/opensds/multi-cloud/s3/pkg/exception"
+	"github.com/opensds/multi-cloud/s3/pkg/utils"
 	pb "github.com/opensds/multi-cloud/s3/proto"
+	log "github.com/sirupsen/logrus"
 )
 
-func (ad *adapter) ListObjects(in *pb.ListObjectsRequest, out *[]pb.Object) S3Error {
+func (ad *adapter) CountObjects(ctx context.Context, in *pb.ListObjectsRequest, out *utils.ObjsCountInfo) S3Error {
 	ss := ad.s.Copy()
 	defer ss.Close()
 	c := ss.DB(DataBaseName).C(in.Bucket)
 
-	log.Log("Find objects from database...... \n")
+	filt := ""
+	if in.Filter[common.KObjKey] != "" {
+		filt = in.Filter[common.KObjKey]
+	}
 
-	err := c.Find(bson.M{}).All(out)
-	//TODO pagination
+	m := bson.M{
+		utils.DBKEY_OBJECTKEY:    bson.M{"$regex": filt},
+		utils.DBKEY_INITFLAG:     bson.M{"$ne": "0"},
+		utils.DBKEY_DELETEMARKER: bson.M{"$ne": "1"},
+	}
+	err := UpdateContextFilter(ctx, m)
 	if err != nil {
-		log.Log("Find objects from database failed, err:%v\n", err)
+		return InternalError
+	}
+
+	q1 := bson.M{
+		"$match": m,
+	}
+
+	q2 := bson.M{
+		"$group": bson.M{
+			"_id":   nil,
+			"size":  bson.M{"$sum": "$size"},
+			"count": bson.M{"$sum": 1},
+		},
+	}
+
+	operations := []bson.M{q1, q2}
+	pipe := c.Pipe(operations)
+	var ret utils.ObjsCountInfo
+	err = pipe.One(&ret)
+	if err == nil {
+		out.Count = ret.Count
+		out.Size = ret.Size
+		log.Infof("count objects of bucket[%s] successfully, count=%d, size=%d\n", in.Bucket, out.Count, out.Size)
+	} else if err == mgo.ErrNotFound {
+		out.Count = 0
+		out.Size = 0
+		log.Infof("count objects of bucket[%s] successfully, count=0, size=0\n", in.Bucket)
+	} else {
+		log.Errorf("count objects of bucket[%s] failed, err:%v\n", in.Bucket, err)
 		return InternalError
 	}
 

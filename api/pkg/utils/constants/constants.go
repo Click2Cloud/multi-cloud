@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,19 +15,34 @@
 package constants
 
 const (
-	// It's RFC 8601 format that decodes and encodes with
-	// exactly precision to seconds.
-	TimeFormat = `2006-01-02T15:04:05`
-
-	DefaultOpensdsEndpoint = "http://localhost:50040"
-
-	// This is set for None Auth
-	DefaultTenantId = "e93b4c0934da416eb9c8d120c5d04d96"
+	//Signature parameter name
+	AuthorizationHeader = "Authorization"
+	SignDateHeader      = "X-Auth-Date"
 
 	// Token parameter name
-	AuthTokenHeader    = "X-Auth-Token"
-	SubjectTokenHeader = "X-Subject-Token"
+	AuthTokenHeader   = "X-Auth-Token"
+	DefaultPolicyPath = "/etc/multicloud/policy.json"
+)
 
-	// OpenSDS current api version
-	APIVersion = "v1beta"
+const (
+	StorageClassOpenSDSStandard = "STANDARD"
+	StorageClassAWSStandard     = "STANDARD"
+)
+
+const (
+	ActionNameExpiration = "expiration"
+	ActionNameTransition = "transition"
+)
+
+const (
+	ExpirationMinDays           = 1
+	TransitionMinDays           = 30
+	LifecycleTransitionDaysStep = 30 // The days an object should be save in the current tier before transition to the next tier
+	TransitionToArchiveMinDays  = 1
+)
+
+const (
+	ListObjectsType2Str string = "2"
+	ListObjectsType2Int int32  = 2
+	ListObjectsType1Int int32  = 1
 )

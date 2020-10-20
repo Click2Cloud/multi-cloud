@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,26 +15,71 @@
 package common
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
-	"fmt"
 	"github.com/emicklei/go-restful"
-	"github.com/micro/go-log"
+	"github.com/micro/go-micro/v2/metadata"
+	c "github.com/opensds/multi-cloud/api/pkg/context"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	MaxPaginationLimit      = 1000
 	DefaultPaginationLimit  = MaxPaginationLimit
 	DefaultPaginationOffset = 0
+	MaxObjectSize           = 5 * 1024 * 1024 * 1024 // 5GB
 	SortDirectionAsc        = "asc"
 	SortDirectionDesc       = "desc"
 )
 
 const (
-	KLimit  = "limit"
-	KOffset = "offset"
-	KSort   = "sort"
+	KLimit        = "limit"
+	KOffset       = "offset"
+	KSort         = "sort"
+	KLastModified = "lastmodified"
+	KObjKey       = "objkey"
+	KStorageTier  = "tier"
+	KPrefix       = "prefix"
+	KMarker       = "marker"
+	KDelimiter    = "delimiter"
+	KVerMarker    = "verMarker"
+)
+
+const (
+	CTX_KEY_TENANT_ID   = "Tenantid"
+	CTX_KEY_USER_ID     = "Userid"
+	CTX_KEY_IS_ADMIN    = "Isadmin"
+	CTX_VAL_TRUE        = "true"
+	CTX_REPRE_TENANT    = "Representedtenantid"
+	CTX_KEY_OBJECT_KEY  = "ObjectKey"
+	CTX_KEY_BUCKET_NAME = "BucketName"
+	CTX_KEY_SIZE        = "ObjectSize"
+	CTX_KEY_LOCATION    = "Location"
+)
+
+const (
+	REQUEST_PATH_BUCKET_NAME         = "bucketName"
+	REQUEST_PATH_OBJECT_KEY          = "objectKey"
+	REQUEST_PATH_BACKEND_ID          = "backendId"
+	REQUEST_HEADER_CONTENT_LENGTH    = "Content-Length"
+	REQUEST_HEADER_BACKEND           = "x-amz-meta-backend"
+	REQUEST_HEADER_STORAGE_CLASS     = "x-amz-storage-class"
+	REQUEST_HEADER_COPY_SOURCE       = "X-Amz-Copy-Source"
+	REQUEST_HEADER_COPY_SOURCE_RANGE = "X-Amz-Copy-Source-Range"
+	REQUEST_HEADER_ACL               = "X-Amz-Acl"
+	REQUEST_HEADER_CONTENT_MD5       = "Content-Md5"
+	REQUEST_HEADER_CONTENT_TYPE      = "Content-Type"
+	REQUEST_HEADER_SSE_KEY           = "x-amz-server-side-encryption"
+	REQUEST_HEADER_SSE_VALUE_AES256  = "AES256"
+)
+
+const (
+	REQUEST_FORM_KEY    = "Key"
+	REQUEST_FORM_BUCKET = "Bucket"
 )
 
 func GetPaginationParam(request *restful.Request) (int32, int32, error) {
@@ -44,7 +89,7 @@ func GetPaginationParam(request *restful.Request) (int32, int32, error) {
 	if request.QueryParameter(KLimit) != "" {
 		limitVal, err := strconv.Atoi(request.QueryParameter("limit"))
 		if err != nil {
-			log.Logf("limit is invalid: %v", err)
+			log.Errorf("limit is invalid: %v", err)
 			return limit, offset, err
 		}
 		if limit > int32(limitVal) {
@@ -55,11 +100,18 @@ func GetPaginationParam(request *restful.Request) (int32, int32, error) {
 	if request.QueryParameter(KOffset) != "" {
 		offsetVal, err := strconv.Atoi(request.QueryParameter("offset"))
 		if err != nil {
-			log.Logf("offset is invalid: %v", err)
+			log.Errorf("offset is invalid: %v", err)
 			return limit, offset, err
 		}
 		offset = int32(offsetVal)
 	}
+
+	if limit < 0 || offset < 0 {
+		msg := fmt.Sprintf("Invalid pagination parameter, limit = %d and offset = %d.", limit, offset)
+		log.Errorf(msg)
+		return limit, offset, errors.New(msg)
+	}
+
 	return limit, offset, nil
 }
 
@@ -97,4 +149,42 @@ func GetFilter(request *restful.Request, filterOpts []string) (map[string]string
 		filter[opt] = v
 	}
 	return filter, nil
+}
+
+func GetFilterPathParams(request *restful.Request, filterOpts []string) (map[string]string, error) {
+
+	filter := make(map[string]string)
+	for _, opt := range filterOpts {
+		v := request.PathParameter(opt)
+		if v == "" {
+			continue
+		}
+		filter[opt] = v
+	}
+	return filter, nil
+}
+
+func InitCtxWithAuthInfo(request *restful.Request) context.Context {
+	actx := request.Attribute(c.KContext).(*c.Context)
+	ctx := metadata.NewContext(context.Background(), map[string]string{
+		CTX_KEY_USER_ID:   actx.UserId,
+		CTX_KEY_TENANT_ID: actx.TenantId,
+		CTX_KEY_IS_ADMIN:  strconv.FormatBool(actx.IsAdmin),
+	})
+
+	return ctx
+}
+
+func GetOwner(request *restful.Request) (ownerId string) {
+	actx := request.Attribute(c.KContext).(*c.Context)
+	return actx.TenantId
+}
+
+func InitCtxWithVal(request *restful.Request, md map[string]string) context.Context {
+	actx := request.Attribute(c.KContext).(*c.Context)
+	md[CTX_KEY_USER_ID] = actx.UserId
+	md[CTX_KEY_TENANT_ID] = actx.TenantId
+	md[CTX_KEY_IS_ADMIN] = strconv.FormatBool(actx.IsAdmin)
+
+	return metadata.NewContext(context.Background(), md)
 }

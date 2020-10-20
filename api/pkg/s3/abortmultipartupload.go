@@ -1,52 +1,30 @@
 package s3
 
 import (
-	"context"
 	"github.com/emicklei/go-restful"
-	"github.com/micro/go-log"
-	"github.com/opensds/multi-cloud/api/pkg/s3/datastore"
-	"net/http"
-	//	"github.com/micro/go-micro/errors"
-
-	. "github.com/opensds/multi-cloud/s3/pkg/exception"
-	"github.com/opensds/multi-cloud/s3/proto"
+	"github.com/opensds/multi-cloud/api/pkg/common"
+	pb "github.com/opensds/multi-cloud/s3/proto"
+	log "github.com/sirupsen/logrus"
 )
 
 func (s *APIService) AbortMultipartUpload(request *restful.Request, response *restful.Response) {
 	bucketName := request.PathParameter("bucketName")
 	objectKey := request.PathParameter("objectKey")
 	uploadId := request.QueryParameter("uploadId")
-	ctx := context.WithValue(request.Request.Context(), "operation", "multipartupload")
-	objectInput := s3.GetObjectInput{Bucket: bucketName, Key: objectKey}
-	objectMD, _ := s.s3Client.GetObject(ctx, &objectInput)
-	multipartUpload := s3.MultipartUpload{}
+
+	multipartUpload := pb.MultipartUpload{}
 	multipartUpload.Key = objectKey
 	multipartUpload.Bucket = bucketName
 	multipartUpload.UploadId = uploadId
 
-	var client datastore.DataStoreAdapter
-	if objectMD == nil {
-		log.Logf("No such obecjt err\n")
-		response.WriteError(http.StatusInternalServerError, NoSuchObject.Error())
-
-	}
-	client = getBackendByName(s, objectMD.Backend)
-	if client == nil {
-		response.WriteError(http.StatusInternalServerError, NoSuchBackend.Error())
-		return
-	}
-	s3err := client.AbortMultipartUpload(&multipartUpload, ctx)
-	if s3err != NoError {
-		response.WriteError(http.StatusInternalServerError, s3err.Error())
+	ctx := common.InitCtxWithAuthInfo(request)
+	result, err := s.s3Client.AbortMultipartUpload(ctx, &pb.AbortMultipartRequest{BucketName: bucketName, ObjectKey: objectKey, UploadId: uploadId})
+	if HandleS3Error(response, request, err, result.GetErrorCode()) != nil {
+		log.Errorf("unable to abort multipart. err:%v, errCode:%v", err, result.ErrorCode)
 		return
 	}
 
-	deleteInput := s3.DeleteObjectInput{Key: objectKey, Bucket: bucketName}
-	res, err := s.s3Client.DeleteObject(ctx, &deleteInput)
-	if err != nil {
-		response.WriteError(http.StatusInternalServerError, err)
-		return
-	}
-	log.Logf("Delete object %s successfully.", objectKey)
-	response.WriteEntity(res)
+	WriteSuccessNoContent(response)
+	log.Infof("Abort multipart upload[bucketName=%s, objectKey=%s, uploadId=%s] successfully.\n",
+		bucketName, objectKey, uploadId)
 }

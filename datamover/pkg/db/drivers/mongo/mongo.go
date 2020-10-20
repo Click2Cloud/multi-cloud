@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@ package mongo
 
 import (
 	"errors"
+
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
-	"github.com/micro/go-log"
 	backend "github.com/opensds/multi-cloud/backend/pkg/model"
 	. "github.com/opensds/multi-cloud/dataflow/pkg/model"
+	log "github.com/sirupsen/logrus"
 )
 
 var adap = &adapter{}
@@ -53,13 +54,15 @@ type adapter struct {
 
 func (ad *adapter) GetJobStatus(jobID string) string {
 	job := Job{}
+	var err error
 	ss := ad.s.Copy()
 	defer ss.Close()
 	c := ss.DB(DataBaseName).C(CollJob)
-
-	err := c.Find(bson.M{"_id": bson.ObjectIdHex(jobID)}).One(&job)
+	if bson.IsObjectIdHex(jobID) {
+		err = c.Find(bson.M{"_id": bson.ObjectIdHex(jobID)}).One(&job)
+	}
 	if err != nil {
-		log.Logf("Get job[ID#%s] failed:%v.\n", jobID, err)
+		log.Errorf("Get job[ID#%s] failed:%v.\n", jobID, err)
 		return ""
 	}
 
@@ -74,7 +77,7 @@ func (ad *adapter) UpdateJob(job *Job) error {
 	j := Job{}
 	err := c.Find(bson.M{"_id": job.Id}).One(&j)
 	if err != nil {
-		log.Logf("Get job[id:%v] failed before update it, err:%v\n", job.Id, err)
+		log.Errorf("Get job[id:%v] failed before update it, err:%v\n", job.Id, err)
 
 		return errors.New("Get job failed before update it.")
 	}
@@ -106,16 +109,16 @@ func (ad *adapter) UpdateJob(job *Job) error {
 
 	err = c.Update(bson.M{"_id": j.Id}, &j)
 	if err != nil {
-		log.Logf("Update job in database failed, err:%v\n", err)
+		log.Errorf("Update job in database failed, err:%v\n", err)
 		return errors.New("Update job in database failed.")
 	}
 
-	log.Log("Update job in database succeed.")
+	log.Info("Update job in database succeed.")
 	return nil
 }
 
 func (ad *adapter) GetBackendByName(name string) (*backend.Backend, error) {
-	log.Logf("Get backend by name:%s\n", name)
+	log.Infof("Get backend by name:%s\n", name)
 	session := ad.s.Copy()
 	defer session.Close()
 

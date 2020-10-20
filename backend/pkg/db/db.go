@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 package db
 
 import (
+	"context"
 	"fmt"
-
 	"github.com/opensds/multi-cloud/backend/pkg/db/drivers/mongo"
 	"github.com/opensds/multi-cloud/backend/pkg/model"
 	"github.com/opensds/multi-cloud/backend/pkg/utils/config"
@@ -24,11 +24,11 @@ import (
 
 type Repository interface {
 	// Backend
-	CreateBackend(backend *model.Backend) (*model.Backend, error)
-	DeleteBackend(id string) error
-	UpdateBackend(backend *model.Backend) (*model.Backend, error)
-	GetBackend(id string) (*model.Backend, error)
-	ListBackend(limit, offset int, query interface{}) ([]*model.Backend, error)
+	CreateBackend(ctx context.Context, backend *model.Backend) (*model.Backend, error)
+	DeleteBackend(ctx context.Context, id string) error
+	UpdateBackend(ctx context.Context, backend *model.Backend) (*model.Backend, error)
+	GetBackend(ctx context.Context, id string) (*model.Backend, error)
+	ListBackend(ctx context.Context, limit, offset int, query interface{}) ([]*model.Backend, error)
 	Close()
 }
 

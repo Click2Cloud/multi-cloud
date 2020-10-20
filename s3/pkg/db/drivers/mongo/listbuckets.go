@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,23 +15,31 @@
 package mongo
 
 import (
+	"context"
+
 	"github.com/globalsign/mgo/bson"
-	"github.com/micro/go-log"
 	. "github.com/opensds/multi-cloud/s3/pkg/exception"
 	pb "github.com/opensds/multi-cloud/s3/proto"
+	log "github.com/sirupsen/logrus"
 )
 
-func (ad *adapter) ListBuckets(in *pb.BaseRequest, out *[]pb.Bucket) S3Error {
+func (ad *adapter) ListBuckets(ctx context.Context, in *pb.BaseRequest, out *[]pb.Bucket) S3Error {
 	ss := ad.s.Copy()
 	defer ss.Close()
 	c := ss.DB(DataBaseName).C(BucketMD)
 
-	log.Log("Find buckets from database...... \n")
+	log.Info("list buckets from database...... \n")
 
-	err := c.Find(bson.M{"owner": in.Id}).All(out)
+	m := bson.M{}
+	err := UpdateContextFilter(ctx, m)
 	if err != nil {
-		log.Log("Find buckets from database failed, err:%v\n", err)
 		return InternalError
+	}
+
+	err = c.Find(m).All(out)
+	if err != nil {
+		log.Errorf("find buckets from database failed, err:%v\n", err)
+		return DBError
 	}
 
 	return NoError

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,41 +15,22 @@
 package s3
 
 import (
-	"net/http"
-
 	"github.com/emicklei/go-restful"
-	"github.com/micro/go-log"
-	"github.com/opensds/multi-cloud/api/pkg/policy"
-	. "github.com/opensds/multi-cloud/s3/pkg/exception"
+	"github.com/opensds/multi-cloud/api/pkg/common"
 	"github.com/opensds/multi-cloud/s3/proto"
-	"golang.org/x/net/context"
-	//	"github.com/micro/go-micro/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 func (s *APIService) BucketDelete(request *restful.Request, response *restful.Response) {
-	if !policy.Authorize(request, response, "bucket:delete") {
-		return
-	}
 	bucketName := request.PathParameter("bucketName")
-	ctx := context.Background()
-	log.Logf("Received request for bucket details: %s", bucketName)
-	res, err := s.s3Client.ListObjects(ctx, &s3.ListObjectsRequest{Bucket: bucketName})
+	log.Infof("Received request for deleting bucket[name=%s].\n", bucketName)
 
-	if err != nil {
-		response.WriteError(http.StatusInternalServerError, err)
+	ctx := common.InitCtxWithAuthInfo(request)
+	rsp, err := s.s3Client.DeleteBucket(ctx, &s3.Bucket{Name: bucketName})
+	if HandleS3Error(response, request, err, rsp.GetErrorCode()) != nil {
+		log.Errorf("delete bucket[%s] failed, err=%v, errCode=%d\n", bucketName, err, rsp.GetErrorCode())
 		return
 	}
-	if len(res.ListObjects) == 0 {
-		res1, err1 := s.s3Client.DeleteBucket(ctx, &s3.Bucket{Name: bucketName})
-		if err1 != nil {
-			response.WriteError(http.StatusInternalServerError, err1)
-			return
-		}
-		log.Log("Delete bucket successfully.")
-		response.WriteEntity(res1)
-	} else {
-		log.Log("The bucket can not be deleted. please delete objects first.\n")
-		response.WriteError(http.StatusInternalServerError, BucketDeleteError.Error())
-	}
-
+	WriteSuccessNoContent(response)
+	log.Infof("delete bucket[%s] successfully\n", bucketName)
 }

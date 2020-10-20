@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
 package db
 
 import (
-	"github.com/micro/go-log"
+	backend "github.com/opensds/multi-cloud/backend/pkg/model"
 	"github.com/opensds/multi-cloud/dataflow/pkg/model"
 	. "github.com/opensds/multi-cloud/dataflow/pkg/utils"
 	"github.com/opensds/multi-cloud/datamover/pkg/db/drivers/mongo"
-	backend "github.com/opensds/multi-cloud/backend/pkg/model"
+	log "github.com/sirupsen/logrus"
 )
 
 // C is a global variable that controls database module.
@@ -30,14 +30,14 @@ func Init(db *Database) {
 	switch db.Driver {
 	case "etcd":
 		// C = etcd.Init(db.Driver, db.Crendential)
-		log.Logf("etcd is not implemented right now!")
+		log.Infof("etcd is not implemented right now!")
 		return
 	case "mongodb":
 		//DbAdapter = mongo.Init(strings.Split(db.Endpoint, ","))
 		DbAdapter = mongo.Init(db.Endpoint)
 		return
 	default:
-		log.Logf("Can't find database driver %s!\n", db.Driver)
+		log.Infof("Can't find database driver %s!\n", db.Driver)
 	}
 }
 
@@ -45,13 +45,13 @@ func Exit(db *Database) {
 	switch db.Driver {
 	case "etcd":
 		// C = etcd.Init(db.Driver, db.Crendential)
-		log.Logf("etcd is not implemented right now!")
+		log.Infof("etcd is not implemented right now!")
 		return
 	case "mongodb":
 		mongo.Exit()
 		return
 	default:
-		log.Logf("Can't find database driver %s!\n", db.Driver)
+		log.Infof("Can't find database driver %s!\n", db.Driver)
 	}
 }
 

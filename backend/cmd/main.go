@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,13 +16,17 @@ package main
 
 import (
 	"fmt"
-	"os"
-
-	micro "github.com/micro/go-micro"
+	//"github.com/micro/go-micro/v2/registry/mdns"
+	micro "github.com/micro/go-micro/v2"
+	"github.com/micro/go-micro/v2/registry"
+	"github.com/micro/go-plugins/registry/kubernetes/v2"
+	"github.com/micro/go-plugins/registry/mdns/v2"
+	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
 	"github.com/opensds/multi-cloud/backend/pkg/db"
 	handler "github.com/opensds/multi-cloud/backend/pkg/service"
 	"github.com/opensds/multi-cloud/backend/pkg/utils/config"
 	pb "github.com/opensds/multi-cloud/backend/proto"
+	"os"
 )
 
 func main() {
@@ -32,8 +36,20 @@ func main() {
 		Endpoint: dbHost})
 	defer db.Exit()
 
+	obs.InitLogs()
+
+	regType := os.Getenv("MICRO_REGISTRY")
+	var reg registry.Registry
+	if regType == "mdns" {
+		reg = mdns.NewRegistry()
+	}
+	if regType == "kubernetes" {
+		reg = kubernetes.NewRegistry()
+	}
+
 	service := micro.NewService(
 		micro.Name("backend"),
+		micro.Registry(reg),
 	)
 
 	service.Init()

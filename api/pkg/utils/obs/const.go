@@ -374,13 +374,9 @@ const (
 type AclType string
 
 const (
-	AclPrivate                AclType = "private"
-	AclPublicRead             AclType = "public-read"
-	AclPublicReadWrite        AclType = "public-read-write"
-	AclAuthenticatedRead      AclType = "authenticated-read"
-	AclBucketOwnerRead        AclType = "bucket-owner-read"
-	AclBucketOwnerFullControl AclType = "bucket-owner-full-control"
-	AclLogDeliveryWrite       AclType = "log-delivery-write"
+	AclPrivate         AclType = "private"
+	AclPublicRead      AclType = "public-read"
+	AclPublicReadWrite AclType = "public-read-write"
 )
 
 type StorageClassType string

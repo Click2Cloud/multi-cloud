@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ package dataflow
 
 import (
 	"github.com/emicklei/go-restful"
-	"github.com/micro/go-micro/client"
+	"github.com/micro/go-micro/v2/client"
 )
 
 func RegisterRouter(ws *restful.WebService) {
@@ -49,4 +49,6 @@ func RegisterRouter(ws *restful.WebService) {
 		Doc("List jobs details")
 	ws.Route(ws.GET("/{tenantId}/jobs/{id}").To(handler.GetJob)).
 		Doc("Get job details")
+	ws.Route(ws.POST("/migration/status").To(handler.ChangeMigrationStatus)).
+		Doc("change status of migration")
 }

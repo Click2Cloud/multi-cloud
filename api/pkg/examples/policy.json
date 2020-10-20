@@ -22,13 +22,11 @@
   "plan:run": "",
   "job:list": "",
   "job:get": "",
-  "bucket:delete": "",
-  "bucket:list": "",
-  "bucket:get": "",
-  "bucket:put": "",
-  "object:get": "",
-  "object:put": "",
-  "object:delete": "",
-  "routbucket:put": "",
-  "routobject:put": ""
+  "volume:list": "",
+  "volume:create": "",
+  "fileshare:list": "",
+  "fileshare:get": "",
+  "fileshare:create": "",
+  "fileshare:put": "",
+  "fileshare:delete": ""
 }

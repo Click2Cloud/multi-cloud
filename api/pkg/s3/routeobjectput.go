@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Huawei Technologies Co., Ltd. All Rights Reserved.
+// Copyright 2019 The OpenSDS Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,28 +16,58 @@ package s3
 
 import (
 	"github.com/emicklei/go-restful"
-	"github.com/opensds/multi-cloud/api/pkg/policy"
-	//	"github.com/micro/go-micro/errors"
+	"github.com/opensds/multi-cloud/api/pkg/filters/signature"
+	"github.com/opensds/multi-cloud/s3/error"
+	log "github.com/sirupsen/logrus"
+)
+
+const (
+	TypePutObj int = iota
+	TypePutACL
+	TypeCopyObj
+	TypeCopyPart
+	TypeUploadPart
+	TypeTagging
 )
 
 func (s *APIService) RouteObjectPut(request *restful.Request, response *restful.Response) {
-	if !policy.Authorize(request, response, "routobject:put") {
-		return
-	}
+	requestType := TypePutObj
 	if IsQuery(request, "acl") {
-		//TODO
+		requestType = TypePutACL
 	} else if IsQuery(request, "tagging") {
-		//TODO
-	} else if IsQuery(request, "uploads") {
-		s.MultiPartUploadInit(request, response)
+		requestType = TypeTagging
+	} else if IsQuery(request, "partNumber") && IsQuery(request, "uploadId") &&
+		HasHeader(request, "x-amz-copy-source") {
+		requestType = TypeCopyPart
 	} else if IsQuery(request, "partNumber") && IsQuery(request, "uploadId") {
-		s.UploadPart(request, response)
-	} else if IsQuery(request, "uploadId") {
-		s.CompleteMultipartUpload(request, response)
+		requestType = TypeUploadPart
 	} else if HasHeader(request, "x-amz-copy-source") {
-
-	} else {
-		s.ObjectPut(request, response)
+		requestType = TypeCopyObj
 	}
 
+	// For TypePutObj and TypeUploadPart, will check payload later.
+	if requestType != TypePutObj && requestType != TypeUploadPart {
+		err := signature.PayloadCheck(request, response)
+		if err != nil {
+			WriteErrorResponse(response, request, err)
+			return
+		}
+	}
+
+	switch requestType {
+	case TypePutACL:
+		s.ObjectAclPut(request, response)
+	case TypeCopyPart:
+		s.ObjectPartCopy(request, response)
+	case TypeUploadPart:
+		s.UploadPart(request, response)
+	case TypeCopyObj:
+		s.ObjectCopy(request, response)
+	case TypePutObj:
+		s.ObjectPut(request, response)
+	default:
+		// Not support
+		log.Errorln("not implemented")
+		WriteErrorResponse(response, request, s3error.ErrNotImplemented)
+	}
 }
