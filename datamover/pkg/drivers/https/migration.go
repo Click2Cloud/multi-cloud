@@ -68,6 +68,9 @@ func HandleMsg(msgData []byte) error {
 
 	//Check the status of job, and run it if needed
 	status := db.DbAdapter.GetJobStatus(job.Id)
+	if status == "aborted" {
+		return nil
+	}
 	if status != flowtype.JOB_STATUS_PENDING {
 		log.Infof("job[id#%s] is not in %s status.\n", job.Id, flowtype.JOB_STATUS_PENDING)
 		return nil //No need to consume this message again
@@ -80,6 +83,15 @@ func HandleMsg(msgData []byte) error {
 
 func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th chan int, req *pb.RunJobRequest,
 	job *flowtype.Job) {
+	status := db.DbAdapter.GetJobStatus(string(job.Id))
+	if status == "aborted" {
+		if job.Status != flowtype.JOB_STATUS_ABORTED {
+			job.EndTime = time.Now()
+			job.Status = flowtype.JOB_STATUS_ABORTED
+			db.DbAdapter.UpdateJob(job)
+		}
+		return
+	}
 	for i := 0; i < len(objs); i++ {
 		if objs[i].Tier == s3utils.Tier999 {
 			// archived object cannot be moved currently
@@ -92,6 +104,9 @@ func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th c
 		if status != "aborted" {
 			go migrate(ctx, objs[i], capa, th, req, job)
 		} else if status == "aborted" {
+			job.EndTime = time.Now()
+			job.Status = flowtype.JOB_STATUS_ABORTED
+			db.DbAdapter.UpdateJob(job)
 			break
 		}
 		th <- 1
@@ -134,7 +149,16 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	if obj.Size%PART_SIZE != 0 {
 		partCount++
 	}
+	status := db.DbAdapter.GetJobStatus(string(job.Id))
+	if status == "aborted" {
+		if job.Status != flowtype.JOB_STATUS_ABORTED {
+			job.EndTime = time.Now()
+			job.Status = flowtype.JOB_STATUS_ABORTED
+			db.DbAdapter.UpdateJob(job)
+		}
 
+		return errors.New("aborted")
+	}
 	log.Infof("*****Copy object[%s] from #%s# to #%s#, size=%d, partCount=%d.\n", obj.ObjectKey, obj.BucketName,
 		destLoca.BucketName, obj.Size, partCount)
 
@@ -274,7 +298,11 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 		obj.ObjectKey, job.SourceLocation, job.DestLocation)
 
 	succeed := true
-
+	if job.Status != flowtype.JOB_STATUS_ABORTED {
+		job.EndTime = time.Now()
+		job.Status = flowtype.JOB_STATUS_ABORTED
+		db.DbAdapter.UpdateJob(job)
+	}
 	// copy object
 	var err error
 	PART_SIZE = GetMultipartSize()
