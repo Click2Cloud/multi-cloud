@@ -477,11 +477,16 @@ func runjob(in *pb.RunJobRequest) error {
 
 	var ret error = nil
 	j.PassedCount = int64(passedCount)
+	status := db.DbAdapter.GetJobStatus(in.Id)
 	if passedCount < totalObjs {
-		errmsg := strconv.FormatInt(totalObjs, 10) + " objects, passed " + strconv.FormatInt(passedCount, 10)
-		log.Infof("run job failed: %s\n", errmsg)
-		ret = errors.New("failed")
-		j.Status = flowtype.JOB_STATUS_FAILED
+		if status == flowtype.JOB_STATUS_ABORTED {
+			j.Status = flowtype.JOB_STATUS_ABORTED
+		} else {
+			errmsg := strconv.FormatInt(totalObjs, 10) + " objects, passed " + strconv.FormatInt(passedCount, 10)
+			log.Infof("run job failed: %s\n", errmsg)
+			ret = errors.New("failed")
+			j.Status = flowtype.JOB_STATUS_FAILED
+		}
 	} else {
 		j.Status = flowtype.JOB_STATUS_SUCCEED
 	}
