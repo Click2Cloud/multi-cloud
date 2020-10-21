@@ -89,8 +89,10 @@ func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th c
 		log.Infof("************Begin to move obj(key:%s)\n", objs[i].ObjectKey)
 		status := db.DbAdapter.GetJobStatus(string(job.Id))
 		//Create one routine
-		if status != "Abort" {
+		if status != "aborted" {
 			go migrate(ctx, objs[i], capa, th, req, job)
+		} else if status == "aborted" {
+			break
 		}
 		th <- 1
 		log.Infof("doMigrate: produce 1 routine, len(th):%d.\n", len(th))
@@ -104,8 +106,8 @@ func CopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, jo
 	}
 	status := db.DbAdapter.GetJobStatus(string(job.Id))
 
-	if status == "Abort" {
-		return errors.New("Aborted")
+	if status == "aborted" {
+		return errors.New("aborted")
 	}
 
 	req := &osdss3.CopyObjectRequest{
@@ -149,8 +151,8 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			currPartSize = obj.Size - offset
 		}
 		status := db.DbAdapter.GetJobStatus(string(job.Id))
-		if status == "Abort" {
-			err = errors.New("Aborted")
+		if status == "aborted" {
+			err = errors.New("aborted")
 			break
 		}
 
@@ -185,11 +187,11 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		for try < 3 { // try 3 times in case network is not stable
 			status := db.DbAdapter.GetJobStatus(string(job.Id))
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
-			if status != "Abort" {
+			if status != "aborted" {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
 
-			} else {
-				err = errors.New("Aborted")
+			} else if status == "aborted" {
+				err = errors.New("aborted")
 				break
 			}
 
@@ -379,6 +381,7 @@ func runjob(in *pb.RunJobRequest) error {
 	var limit int32 = 1000
 	var marker string
 	for {
+		status := db.DbAdapter.GetJobStatus(in.Id)
 		objs, err := getObjs(ctx, in, marker, limit)
 		if err != nil {
 			//update database
@@ -394,7 +397,14 @@ func runjob(in *pb.RunJobRequest) error {
 		}
 
 		//Do migration for each object.
-		go doMigrate(ctx, objs, capa, th, in, &j)
+		if status != "aborted" {
+			go doMigrate(ctx, objs, capa, th, in, &j)
+		} else if status == "aborted" {
+			j.Status = flowtype.JOB_STATUS_ABORTED
+			j.EndTime = time.Now()
+			db.DbAdapter.UpdateJob(&j)
+			break
+		}
 
 		if num < int(limit) {
 			break
