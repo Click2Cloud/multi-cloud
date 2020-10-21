@@ -298,10 +298,13 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 		obj.ObjectKey, job.SourceLocation, job.DestLocation)
 
 	succeed := true
-	if job.Status != flowtype.JOB_STATUS_ABORTED {
-		job.EndTime = time.Now()
-		job.Status = flowtype.JOB_STATUS_ABORTED
-		db.DbAdapter.UpdateJob(job)
+	status := db.DbAdapter.GetJobStatus(string(job.Id))
+	if status == "aborted" {
+		if job.Status != flowtype.JOB_STATUS_ABORTED {
+			job.EndTime = time.Now()
+			job.Status = flowtype.JOB_STATUS_ABORTED
+			db.DbAdapter.UpdateJob(job)
+		}
 	}
 	// copy object
 	var err error
