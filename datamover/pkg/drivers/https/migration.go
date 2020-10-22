@@ -83,6 +83,7 @@ func HandleMsg(msgData []byte) error {
 
 func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th chan int, req *pb.RunJobRequest,
 	job *flowtype.Job) {
+	log.Println(job.Id, "this is job ID ############################################################### IN Do migrate")
 	status := db.DbAdapter.GetJobStatus(string(job.Id))
 	if status == "aborted" {
 		if job.Status != flowtype.JOB_STATUS_ABORTED {
@@ -149,6 +150,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	if obj.Size%PART_SIZE != 0 {
 		partCount++
 	}
+	log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
 	status := db.DbAdapter.GetJobStatus(string(job.Id))
 	if status == "aborted" {
 		if job.Status != flowtype.JOB_STATUS_ABORTED {
@@ -174,6 +176,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		if i+1 == partCount {
 			currPartSize = obj.Size - offset
 		}
+		log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
 		status := db.DbAdapter.GetJobStatus(string(job.Id))
 		if status == "aborted" {
 			err = errors.New("aborted")
@@ -296,7 +299,7 @@ func deleteObj(ctx context.Context, obj *osdss3.Object) error {
 func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan int, req *pb.RunJobRequest, job *flowtype.Job) {
 	log.Infof("Move obj[%s] from bucket[%s] to bucket[%s].\n",
 		obj.ObjectKey, job.SourceLocation, job.DestLocation)
-
+	log.Println(job.Id, "this is job ID ############################################################### IN migrate")
 	succeed := true
 	status := db.DbAdapter.GetJobStatus(string(job.Id))
 	if status == "aborted" {
@@ -383,7 +386,7 @@ func initJob(ctx context.Context, in *pb.RunJobRequest, j *flowtype.Job) error {
 func runjob(in *pb.RunJobRequest) error {
 	log.Infoln("Runjob is called in datamover service.")
 	log.Infof("Request: %+v\n", in)
-
+	log.Println(in.Id, "this is job ID ############################################################### IN runjob")
 	// set context tiemout
 	ctx := metadata.NewContext(context.Background(), map[string]string{
 		common.CTX_KEY_USER_ID:   in.UserId,
@@ -434,6 +437,7 @@ func runjob(in *pb.RunJobRequest) error {
 			j.Status = flowtype.JOB_STATUS_ABORTED
 			j.EndTime = time.Now()
 			db.DbAdapter.UpdateJob(&j)
+			return errors.New("ABORTED")
 			break
 		}
 
