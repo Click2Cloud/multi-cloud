@@ -68,7 +68,7 @@ func HandleMsg(msgData []byte) error {
 
 	//Check the status of job, and run it if needed
 	status := db.DbAdapter.GetJobStatus(job.Id)
-	if status == "aborted" {
+	if status == flowtype.JOB_STATUS_ABORTED {
 		return nil
 	}
 	if status != flowtype.JOB_STATUS_PENDING {
@@ -77,7 +77,9 @@ func HandleMsg(msgData []byte) error {
 	}
 
 	log.Infof("HandleMsg:job=%+v\n", job)
-	go runjob(&job)
+	if status != flowtype.JOB_STATUS_ABORTED {
+		go runjob(&job)
+	}
 	return nil
 }
 
