@@ -102,13 +102,13 @@ func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th c
 			continue
 		}
 		log.Infof("************Begin to move obj(key:%s)\n", objs[i].ObjectKey)
-		status := db.DbAdapter.GetJobStatus(string(job.Id))
+		status1 := db.DbAdapter.GetJobStatus(string(job.Id))
 		//Create one routine
-		if status != flowtype.JOB_STATUS_ABORTED {
+		if status1 != flowtype.JOB_STATUS_ABORTED {
 			go migrate(ctx, objs[i], capa, th, req, job)
 			th <- 1
 			log.Infof("doMigrate: produce 1 routine, len(th):%d.\n", len(th))
-		} else if status == flowtype.JOB_STATUS_ABORTED {
+		} else if status1 == flowtype.JOB_STATUS_ABORTED {
 			job.EndTime = time.Now()
 			job.Status = flowtype.JOB_STATUS_ABORTED
 			db.DbAdapter.UpdateJob(job)
@@ -185,8 +185,8 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			currPartSize = obj.Size - offset
 		}
 		log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
-		status := db.DbAdapter.GetJobStatus(string(job.Id))
-		if status == flowtype.JOB_STATUS_ABORTED {
+		status1 := db.DbAdapter.GetJobStatus(string(job.Id))
+		if status1 == flowtype.JOB_STATUS_ABORTED {
 			err = errors.New("aborted")
 			break
 		}
@@ -220,12 +220,12 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		tmoutSec := currPartSize / MiniSpeed
 		opt := client.WithRequestTimeout(time.Duration(tmoutSec) * time.Second)
 		for try < 3 { // try 3 times in case network is not stable
-			status := db.DbAdapter.GetJobStatus(string(job.Id))
+			status2 := db.DbAdapter.GetJobStatus(string(job.Id))
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
-			if status != flowtype.JOB_STATUS_ABORTED {
+			if status2 != flowtype.JOB_STATUS_ABORTED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
 
-			} else if status == flowtype.JOB_STATUS_ABORTED {
+			} else if status2 == flowtype.JOB_STATUS_ABORTED {
 				err = errors.New("aborted")
 				break
 			}
@@ -424,6 +424,13 @@ func runjob(in *pb.RunJobRequest) error {
 	var marker string
 	for {
 		status := db.DbAdapter.GetJobStatus(in.Id)
+		if status == flowtype.JOB_STATUS_ABORTED {
+			j.Status = flowtype.JOB_STATUS_ABORTED
+			j.EndTime = time.Now()
+			db.DbAdapter.UpdateJob(&j)
+			return errors.New("ABORTED")
+			break
+		}
 		objs, err := getObjs(ctx, in, marker, limit)
 		if err != nil {
 			//update database
@@ -439,9 +446,9 @@ func runjob(in *pb.RunJobRequest) error {
 		}
 
 		//Do migration for each object.
-		if status != "aborted" {
+		if status != flowtype.JOB_STATUS_ABORTED {
 			go doMigrate(ctx, objs, capa, th, in, &j)
-		} else if status == "aborted" {
+		} else if status == flowtype.JOB_STATUS_ABORTED {
 			j.Status = flowtype.JOB_STATUS_ABORTED
 			j.EndTime = time.Now()
 			db.DbAdapter.UpdateJob(&j)
