@@ -104,16 +104,17 @@ func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th c
 		log.Infof("************Begin to move obj(key:%s)\n", objs[i].ObjectKey)
 		status := db.DbAdapter.GetJobStatus(string(job.Id))
 		//Create one routine
-		if status != "aborted" {
+		if status != flowtype.JOB_STATUS_ABORTED {
 			go migrate(ctx, objs[i], capa, th, req, job)
-		} else if status == "aborted" {
+			th <- 1
+			log.Infof("doMigrate: produce 1 routine, len(th):%d.\n", len(th))
+		} else if status == flowtype.JOB_STATUS_ABORTED {
 			job.EndTime = time.Now()
 			job.Status = flowtype.JOB_STATUS_ABORTED
 			db.DbAdapter.UpdateJob(job)
 			break
 		}
-		th <- 1
-		log.Infof("doMigrate: produce 1 routine, len(th):%d.\n", len(th))
+
 	}
 }
 
@@ -124,8 +125,13 @@ func CopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, jo
 	}
 	status := db.DbAdapter.GetJobStatus(string(job.Id))
 
-	if status == "aborted" {
-		return errors.New("aborted")
+	if status == flowtype.JOB_STATUS_ABORTED {
+		if job.Status != flowtype.JOB_STATUS_ABORTED {
+			job.Status = flowtype.JOB_STATUS_ABORTED
+			job.EndTime = time.Now()
+			db.DbAdapter.UpdateJob(job)
+		}
+		return errors.New(job.Status)
 	}
 
 	req := &osdss3.CopyObjectRequest{
@@ -154,7 +160,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	}
 	log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
 	status := db.DbAdapter.GetJobStatus(string(job.Id))
-	if status == "aborted" {
+	if status == flowtype.JOB_STATUS_ABORTED {
 		if job.Status != flowtype.JOB_STATUS_ABORTED {
 			job.EndTime = time.Now()
 			job.Status = flowtype.JOB_STATUS_ABORTED
@@ -180,7 +186,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		}
 		log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
 		status := db.DbAdapter.GetJobStatus(string(job.Id))
-		if status == "aborted" {
+		if status == flowtype.JOB_STATUS_ABORTED {
 			err = errors.New("aborted")
 			break
 		}
@@ -216,10 +222,10 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		for try < 3 { // try 3 times in case network is not stable
 			status := db.DbAdapter.GetJobStatus(string(job.Id))
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
-			if status != "aborted" {
+			if status != flowtype.JOB_STATUS_ABORTED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
 
-			} else if status == "aborted" {
+			} else if status == flowtype.JOB_STATUS_ABORTED {
 				err = errors.New("aborted")
 				break
 			}
@@ -304,7 +310,7 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 	log.Println(job.Id, "this is job ID ############################################################### IN migrate")
 	succeed := true
 	status := db.DbAdapter.GetJobStatus(string(job.Id))
-	if status == "aborted" {
+	if status == flowtype.JOB_STATUS_ABORTED {
 		if job.Status != flowtype.JOB_STATUS_ABORTED {
 			job.EndTime = time.Now()
 			job.Status = flowtype.JOB_STATUS_ABORTED
