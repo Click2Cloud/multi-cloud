@@ -77,9 +77,7 @@ func HandleMsg(msgData []byte) error {
 	}
 
 	log.Infof("HandleMsg:job=%+v\n", job)
-	if status != flowtype.JOB_STATUS_ABORTED {
-		go runjob(&job)
-	}
+	go runjob(&job)
 	return nil
 }
 
@@ -87,7 +85,8 @@ func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th c
 	job *flowtype.Job) {
 	log.Println(job.Id, "this is job ID ############################################################### IN Do migrate")
 	status := db.DbAdapter.GetJobStatus(string(job.Id))
-	if status == "aborted" {
+	log.Println(job.Id, status, "this is status  ############################################################### IN Do migrate")
+	if status == flowtype.JOB_STATUS_ABORTED {
 		if job.Status != flowtype.JOB_STATUS_ABORTED {
 			job.EndTime = time.Now()
 			job.Status = flowtype.JOB_STATUS_ABORTED
@@ -103,6 +102,7 @@ func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th c
 		}
 		log.Infof("************Begin to move obj(key:%s)\n", objs[i].ObjectKey)
 		status1 := db.DbAdapter.GetJobStatus(string(job.Id))
+		log.Println(job.Id, status1, "this is status  ############################################################### IN Do migrate")
 		//Create one routine
 		if status1 != flowtype.JOB_STATUS_ABORTED {
 			go migrate(ctx, objs[i], capa, th, req, job)
@@ -110,6 +110,7 @@ func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th c
 			log.Infof("doMigrate: produce 1 routine, len(th):%d.\n", len(th))
 		} else if status1 == flowtype.JOB_STATUS_ABORTED {
 			job.EndTime = time.Now()
+			job.Status = flowtype.JOB_STATUS_ABORTED
 			job.Status = flowtype.JOB_STATUS_ABORTED
 			db.DbAdapter.UpdateJob(job)
 			break
@@ -160,14 +161,15 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	}
 	log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
 	status := db.DbAdapter.GetJobStatus(string(job.Id))
+	log.Println(status, "this is status ############################################################### IN MultipartCopyObj")
 	if status == flowtype.JOB_STATUS_ABORTED {
 		if job.Status != flowtype.JOB_STATUS_ABORTED {
 			job.EndTime = time.Now()
 			job.Status = flowtype.JOB_STATUS_ABORTED
+			job.EndTime = time.Now()
 			db.DbAdapter.UpdateJob(job)
 		}
-
-		return errors.New("aborted")
+		return errors.New(job.Status)
 	}
 	log.Infof("*****Copy object[%s] from #%s# to #%s#, size=%d, partCount=%d.\n", obj.ObjectKey, obj.BucketName,
 		destLoca.BucketName, obj.Size, partCount)
@@ -186,6 +188,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		}
 		log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
 		status1 := db.DbAdapter.GetJobStatus(string(job.Id))
+		log.Println(status1, "this is status ############################################################### IN MultipartCopyObj")
 		if status1 == flowtype.JOB_STATUS_ABORTED {
 			err = errors.New("aborted")
 			break
@@ -310,6 +313,7 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 	log.Println(job.Id, "this is job ID ############################################################### IN migrate")
 	succeed := true
 	status := db.DbAdapter.GetJobStatus(string(job.Id))
+	log.Println(status, "this is status ############################################################### IN migrate")
 	if status == flowtype.JOB_STATUS_ABORTED {
 		if job.Status != flowtype.JOB_STATUS_ABORTED {
 			job.EndTime = time.Now()
@@ -424,13 +428,7 @@ func runjob(in *pb.RunJobRequest) error {
 	var marker string
 	for {
 		status := db.DbAdapter.GetJobStatus(in.Id)
-		if status == flowtype.JOB_STATUS_ABORTED {
-			j.Status = flowtype.JOB_STATUS_ABORTED
-			j.EndTime = time.Now()
-			db.DbAdapter.UpdateJob(&j)
-			return errors.New("ABORTED")
-			break
-		}
+		log.Println(in.Id, status, "this is status  ############################################################### IN run job")
 		objs, err := getObjs(ctx, in, marker, limit)
 		if err != nil {
 			//update database
@@ -497,6 +495,7 @@ func runjob(in *pb.RunJobRequest) error {
 	var ret error = nil
 	j.PassedCount = int64(passedCount)
 	status := db.DbAdapter.GetJobStatus(in.Id)
+	log.Println(in.Id, status, "this is status  ############################################################### IN run job")
 	if passedCount < totalObjs {
 		if status == flowtype.JOB_STATUS_ABORTED {
 			j.Status = flowtype.JOB_STATUS_ABORTED

@@ -49,6 +49,7 @@ func (b *dataflowService) ChangeStatus(ctx context.Context, request *pb.ChangeSt
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
