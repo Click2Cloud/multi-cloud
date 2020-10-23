@@ -58,9 +58,9 @@ func (ad *adapter) GetJobStatus(jobID string) string {
 	ss := ad.s.Copy()
 	defer ss.Close()
 	c := ss.DB(DataBaseName).C(CollJob)
-	if bson.IsObjectIdHex(jobID) {
-		err = c.Find(bson.M{"_id": bson.ObjectIdHex(jobID)}).One(&job)
-	}
+	//if bson.IsObjectIdHex(jobID) {
+	err = c.Find(bson.M{"_id": bson.ObjectIdHex(jobID)}).One(&job)
+	//}
 	if err != nil {
 		log.Errorf("Get job[ID#%s] failed:%v.\n", jobID, err)
 		return ""
