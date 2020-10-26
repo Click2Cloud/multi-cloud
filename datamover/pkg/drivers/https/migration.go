@@ -229,7 +229,13 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
 
 			} else if status2 == flowtype.JOB_STATUS_ABORTED {
-				err = errors.New("aborted")
+				if job.Status != flowtype.JOB_STATUS_ABORTED {
+					job.EndTime = time.Now()
+					job.Status = flowtype.JOB_STATUS_ABORTED
+					job.EndTime = time.Now()
+					db.DbAdapter.UpdateJob(job)
+				}
+				return errors.New(job.Status)
 				break
 			}
 
