@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"github.com/emicklei/go-restful"
 	"github.com/micro/go-micro/v2/client"
-
 	backend "github.com/opensds/multi-cloud/backend/proto"
 	dataflow "github.com/opensds/multi-cloud/dataflow/proto"
 	datamover "github.com/opensds/multi-cloud/datamover/proto"
 	s3 "github.com/opensds/multi-cloud/s3/proto"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -39,7 +38,7 @@ func NewAPIService(c client.Client) *APIService {
 func (s *APIService) AbortJob(request *restful.Request, response *restful.Response) {
 
 	id := request.PathParameter("id")
-	log.Print("Received request jobs [id=%s] details.\n", id)
+	log.Info("Received request Abort migration################################################################# \n", id)
 	ctx := context.Background()
 
 	res, err := s.datamoverClient.AbortJob(ctx, &datamover.AbortJobRequest{Id: id})
@@ -52,20 +51,20 @@ func (s *APIService) AbortJob(request *restful.Request, response *restful.Respon
 	log.Print("Abort jobs reponse:%v\n", res)
 	jsons, errs := json.Marshal(res)
 	if errs != nil {
-		log.Print(errs.Error())
+		log.Error(errs.Error())
 	} else {
-		log.Print("res: %s.\n", jsons)
+		log.Info("res: %s.\n", jsons)
 	}
 	//For debug -- end
 
-	log.Print("Abort job successfully.")
+	log.Debug("Abort job successfully.")
 	response.WriteEntity(res)
 }
 func (s *APIService) PauseJob(request *restful.Request, response *restful.Response) {
 
 	//actx := request.Attribute(c.KContext).(*c.Context)
 	id := request.PathParameter("id")
-	log.Print("Received request jobs [id=%s] details.\n", id)
+	log.Info("Received request jobs [id=%s] details.\n", id)
 	ctx := context.Background()
 	res, err := s.datamoverClient.PauseJob(ctx, &datamover.PauseJobRequest{Id: id})
 	//var resp = &pausejobresp{}

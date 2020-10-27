@@ -565,7 +565,7 @@ func Abort(jobId string) (string, error) {
 		//	logger.Println("Migration Aborted Successfully.")
 		log.Infof("Migration Aborted Successfully.")
 	}
-	log.Println("i am here **************************************************************************************************************************************************")
+	log.Debug("i am here **************************************************************************************************************************************************")
 	jobstate[jobId] = ABORTED
 	j.Status = ABORTED
 	db.DbAdapter.UpdateJob(&j)
