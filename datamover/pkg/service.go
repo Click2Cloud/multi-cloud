@@ -15,6 +15,11 @@
 package pkg
 
 import (
+	"context"
+	"fmt"
+	"github.com/opensds/multi-cloud/dataflow/pkg/model"
+	migration "github.com/opensds/multi-cloud/datamover/pkg/drivers/https"
+	pb "github.com/opensds/multi-cloud/datamover/proto"
 	"os"
 	"strings"
 
@@ -25,6 +30,12 @@ import (
 )
 
 var dataMoverGroup = "datamover"
+
+type dataMoverService struct{}
+
+func (b *dataMoverService) Error() string {
+	panic("implement me")
+}
 
 func InitDatamoverService() error {
 	host := os.Getenv("DB_HOST")
@@ -51,5 +62,110 @@ func InitDatamoverService() error {
 
 	datamoverID := os.Getenv("HOSTNAME")
 	log.Infof("init datamover[ID#%s] finished.\n", datamoverID)
+	return &dataMoverService{}
+}
+func (b *dataMoverService) AbortJob(ctx context.Context, in *pb.AbortJobRequest, out *pb.AbortJobResponse) error {
+	log.Info("Cancel job is called in datamover service.************************************************************************")
+	//actx := c.NewContextFromJson(in.GetContext())
+	if in.Id == "" {
+		errmsg := fmt.Sprint("No id specified.")
+		out.Err = errmsg
+		return nil
+	}
+	jobstatus := db.DbAdapter.GetJobStatus(in.Id)
+	//jb, err := job.Cancel(actx, in.Id)
+	//log.Logf("Cancel job response from datamover :%d.", jb.Id)
+
+	if jobstatus == model.JOB_STATUS_ABORTED {
+		out.Err = "job already aborted"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+	if jobstatus == model.JOB_STATUS_CANCELLED {
+		out.Err = "job already cancelled"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+	if jobstatus == model.JOB_STATUS_SUCCEED {
+		out.Err = "job already completed"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+	if jobstatus == model.JOB_STATUS_FAILED {
+		out.Err = "job current status is failed"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+
+	jobs, err := migration.Abort(in.Id)
+
+	if err != nil {
+		log.Println("Get job err:%d.", err)
+		out.Err = err.Error()
+		return nil
+	}
+	out.Id = in.Id
+	out.Status = jobs
+
+	return nil
+}
+func (b *dataMoverService) PauseJob(ctx context.Context, in *pb.PauseJobRequest, out *pb.PauseJobResponse) error {
+	log.Println("Pause job is called in datamover service.")
+	//actx := c.NewContextFromJson(in.GetContext())
+	if in.Id == "" {
+		errmsg := fmt.Sprint("No id specified.")
+		out.Err = errmsg
+		return nil
+	}
+	jobstatus := db.DbAdapter.GetJobStatus(in.Id)
+	if jobstatus == model.JOB_STATUS_ABORTED {
+		out.Err = "job already aborted"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+	if jobstatus == model.JOB_STATUS_CANCELLED {
+		out.Err = "job already cancelled"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+	if jobstatus == model.JOB_STATUS_SUCCEED {
+		out.Err = "job already completed"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+	if jobstatus == model.JOB_STATUS_FAILED {
+		out.Err = "job current status is failed"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+	if jobstatus == model.JOB_STATUS_PAUSED {
+		out.Err = "job is already Paused"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+	if jobstatus != model.JOB_STATUS_RUNNING {
+		out.Err = "Job is not in running state"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+	jobs, err := migration.Pause(in.Id)
+
+	if err != nil {
+		log.Println("Get job err:%d.", err)
+		out.Err = err.Error()
+		return nil
+	}
+	out.Id = in.Id
+	out.Status = jobs
 	return nil
 }

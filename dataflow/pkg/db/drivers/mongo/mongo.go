@@ -753,13 +753,11 @@ func (ad *adapter) ChangeStatus(jobId string, status string) error {
 	defer ss.Close()
 	c := ss.DB(DataBaseName).C(CollJob)
 	j := Job{}
-	if bson.IsObjectIdHex(jobId) {
-		err = c.Find(bson.M{"_id": bson.ObjectIdHex(jobId)}).One(&j)
-		if err != nil {
-			log.Errorf("Change status failed [id:%v] before changing status , err:%v\n", jobId, err)
+	err = c.Find(bson.M{"_id": bson.ObjectIdHex(jobId)}).One(&j)
+	if err != nil {
+		log.Errorf("Get job[id:%v] failed before update it, err:%v\n", jobId, err)
 
-			return errors.New("Change status failed  before update it.")
-		}
+		return errors.New("Change status failed  before update it.")
 	}
 
 	j.EndTime = time.Now()

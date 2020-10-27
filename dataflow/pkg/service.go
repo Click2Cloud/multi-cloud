@@ -38,11 +38,18 @@ type dataflowService struct{}
 
 func (b *dataflowService) ChangeStatus(ctx context.Context, request *pb.ChangeStatusRequest, response *pb.ChangeStatusResponse) error {
 	status := request.ChangeStatus.Status
+	var err error
 	jobid := request.ChangeStatus.JobId
-	err := db.DbAdapter.ChangeStatus(jobid, status)
+	for i := 0; i < 3; i++ {
+		err = db.DbAdapter.ChangeStatus(jobid, status)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
