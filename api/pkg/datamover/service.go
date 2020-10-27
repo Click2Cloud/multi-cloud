@@ -5,10 +5,7 @@ import (
 	"encoding/json"
 	"github.com/emicklei/go-restful"
 	"github.com/micro/go-micro/v2/client"
-	c "github.com/opensds/multi-cloud/api/pkg/context"
 
-	//"github.com/opensds/multi-cloud/api/pkg/context"
-	"github.com/opensds/multi-cloud/api/pkg/policy"
 	backend "github.com/opensds/multi-cloud/backend/proto"
 	dataflow "github.com/opensds/multi-cloud/dataflow/proto"
 	datamover "github.com/opensds/multi-cloud/datamover/proto"
@@ -40,15 +37,12 @@ func NewAPIService(c client.Client) *APIService {
 }
 
 func (s *APIService) AbortJob(request *restful.Request, response *restful.Response) {
-	if !policy.Authorize(request, response, "plan:abort") {
-		return
-	}
-	actx := request.Attribute(c.KContext).(*c.Context)
+
 	id := request.PathParameter("id")
 	log.Print("Received request jobs [id=%s] details.\n", id)
 	ctx := context.Background()
 
-	res, err := s.datamoverClient.AbortJob(ctx, &datamover.AbortJobRequest{Context: actx.ToJson(), Id: id})
+	res, err := s.datamoverClient.AbortJob(ctx, &datamover.AbortJobRequest{Id: id})
 
 	if err != nil {
 		response.WriteEntity(err)

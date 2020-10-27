@@ -7,8 +7,7 @@ service datamover {
     rpc PauseJob(PauseJobRequest)returns (PauseJobResponse){}
 }
 message AbortJobRequest {
-	string context = 1;
-	string id = 2;
+	string id = 1;
 }
 
 message AbortJobResponse {
