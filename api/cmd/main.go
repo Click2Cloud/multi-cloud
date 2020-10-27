@@ -21,6 +21,7 @@ import (
 	"github.com/micro/go-plugins/registry/kubernetes/v2"
 	"github.com/micro/go-plugins/registry/mdns/v2"
 	"github.com/opensds/multi-cloud/api/pkg/backend"
+	"github.com/opensds/multi-cloud/api/pkg/datamover"
 	"os"
 	//"github.com/opensds/multi-cloud/api/pkg/block"
 	"github.com/opensds/multi-cloud/api/pkg/dataflow"
@@ -78,6 +79,7 @@ func main() {
 
 		backend.RegisterRouter(ws)
 		dataflow.RegisterRouter(ws)
+		datamover.RegisterRouter(ws)
 		//block.RegisterRouter(ws)
 		//file.RegisterRouter(ws)
 		// add filter for authentication context
