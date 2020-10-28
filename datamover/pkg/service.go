@@ -18,25 +18,23 @@ import (
 	"context"
 	"fmt"
 	"github.com/opensds/multi-cloud/dataflow/pkg/model"
-	migration "github.com/opensds/multi-cloud/datamover/pkg/drivers/https"
-	pb "github.com/opensds/multi-cloud/datamover/proto"
-	"os"
-	"strings"
-
 	"github.com/opensds/multi-cloud/dataflow/pkg/utils"
 	"github.com/opensds/multi-cloud/datamover/pkg/db"
+	migration "github.com/opensds/multi-cloud/datamover/pkg/drivers/https"
 	"github.com/opensds/multi-cloud/datamover/pkg/kafka"
+	pb "github.com/opensds/multi-cloud/datamover/proto"
 	log "github.com/sirupsen/logrus"
+	"os"
+	"strings"
 )
 
 var dataMoverGroup = "datamover"
 
-type dataMoverService struct{}
+type datamoverService struct{}
 
-func (b *dataMoverService) Error() string {
-	panic("implement me")
+func NewDatamoverService() pb.DatamoverHandler {
+	return &datamoverService{}
 }
-
 func InitDatamoverService() error {
 	host := os.Getenv("DB_HOST")
 	dbstor := utils.Database{Credential: "unkonwn", Driver: "mongodb", Endpoint: host}
@@ -62,9 +60,9 @@ func InitDatamoverService() error {
 
 	datamoverID := os.Getenv("HOSTNAME")
 	log.Infof("init datamover[ID#%s] finished.\n", datamoverID)
-	return &dataMoverService{}
+	return nil
 }
-func (b *dataMoverService) AbortJob(ctx context.Context, in *pb.AbortJobRequest, out *pb.AbortJobResponse) error {
+func (b *datamoverService) AbortJob(ctx context.Context, in *pb.AbortJobRequest, out *pb.AbortJobResponse) error {
 	log.Info("Cancel job is called in datamover service.*************************************************************************")
 	//actx := c.NewContextFromJson(in.GetContext())
 	if in.Id == "" {
@@ -113,7 +111,7 @@ func (b *dataMoverService) AbortJob(ctx context.Context, in *pb.AbortJobRequest,
 
 	return nil
 }
-func (b *dataMoverService) PauseJob(ctx context.Context, in *pb.PauseJobRequest, out *pb.PauseJobResponse) error {
+func (b *datamoverService) PauseJob(ctx context.Context, in *pb.PauseJobRequest, out *pb.PauseJobResponse) error {
 	log.Println("Pause job is called in datamover service.")
 	//actx := c.NewContextFromJson(in.GetContext())
 	if in.Id == "" {
@@ -168,4 +166,10 @@ func (b *dataMoverService) PauseJob(ctx context.Context, in *pb.PauseJobRequest,
 	out.Id = in.Id
 	out.Status = jobs
 	return nil
+}
+func (d *datamoverService) Runjob(ctx context.Context, request *pb.RunJobRequest, response *pb.RunJobResponse) error {
+	panic("implement me")
+}
+func (d *datamoverService) DoLifecycleAction(ctx context.Context, request *pb.LifecycleActionRequest, resonse *pb.LifecycleActionResonse) error {
+	panic("implement me")
 }
