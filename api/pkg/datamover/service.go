@@ -62,19 +62,15 @@ func (s *APIService) AbortJob(request *restful.Request, response *restful.Respon
 }
 func (s *APIService) PauseJob(request *restful.Request, response *restful.Response) {
 
-	//actx := request.Attribute(c.KContext).(*c.Context)
 	id := request.PathParameter("id")
 	log.Info("Received request jobs [id=%s] details.\n", id)
 	ctx := context.Background()
 	res, err := s.datamoverClient.PauseJob(ctx, &datamover.PauseJobRequest{Id: id})
-	//var resp = &pausejobresp{}
 	if err != nil {
 		response.WriteEntity(err)
 		return
 	}
-	//else {
-	//	resp = &pausejobresp{res.Id, res.Status}
-	//}
+
 	//For debug -- begin
 	log.Print("Pause jobs reponse:%v\n", res)
 	jsons, errs := json.Marshal(res)
