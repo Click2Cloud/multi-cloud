@@ -226,7 +226,10 @@ func CopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, jo
 
 func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, job *flowtype.Job) error {
 	log.Debugf("obj.Size=%d, PART_SIZE=%d\n", obj.Size, PART_SIZE)
-
+	partCount := int64(obj.Size / PART_SIZE)
+	if obj.Size%PART_SIZE != 0 {
+		partCount++
+	}
 	log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
 	status := jobstate[job.Id.Hex()]
 	log.Println(status, "this is status ############################################################### IN MultipartCopyObj")
@@ -239,21 +242,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		}
 		return errors.New(job.Status)
 	}
-	if status == PAUSED {
-		if job.Status != flowtype.JOB_STATUS_HOLD {
-			job.TimeRequired = 0
-			job.EndTime = time.Now() //TODO Need to check
-			job.Msg = "Migration Paused"
-			job.Status = flowtype.JOB_STATUS_HOLD
-			db.DbAdapter.UpdateJob(job)
-		}
-		log.Printf("JOB PAUSED RETURNING POINT-11 objKey:%s PART: %d  \n", obj.ObjectKey)
-		return errors.New(job.Msg)
-	}
-	partCount := int64(obj.Size / PART_SIZE)
-	if obj.Size%PART_SIZE != 0 {
-		partCount++
-	}
 	log.Infof("*****Copy object[%s] from #%s# to #%s#, size=%d, partCount=%d.\n", obj.ObjectKey, obj.BucketName,
 		destLoca.BucketName, obj.Size, partCount)
 
@@ -263,58 +251,21 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	var initSucceed bool = false
 	var completeParts []*osdss3.CompletePart
 	currPartSize := PART_SIZE
-	var partDetail = []model.PartDet{}
-	var partNo int64 = 1
-	resMultipart := false
-	for m := range job.ObjList {
-		if job.ObjList[m].ObjKey == obj.ObjectKey && job.ObjList[m].PartNo != 0 {
-			partNo = job.ObjList[m].PartNo
-			uploadId = job.ObjList[m].UploadId
-			//for t := range job.ObjList[m].PartTag {
-			//	partDetail = append(partDetail,model.PartDet{
-			//		Etag:   job.ObjList[m].PartTag[t].Etag,
-			//		No: job.ObjList[m].PartTag[t].No,
-			//	})
-			//}
-			log.Printf("[INFO] MIGRATION RESUMING objKey:%s \n", obj.ObjectKey)
-			log.Print("GOT PART NO for ", job.ObjList[m].ObjKey, job.ObjList[m].UploadId, job.ObjList[m])
-
-			resMultipart = true
-			break
-		}
-	}
-
-	for i = partNo - 1; i < partCount; i++ {
-		status3 := jobstate[job.Id.Hex()]
-		if status3 == ABORTED {
-			if job.Status != ABORTED {
-				job.EndTime = time.Now()
-				job.Status = ABORTED
-				job.EndTime = time.Now()
-				db.DbAdapter.UpdateJob(job)
-			}
-			break
-		}
-		if status3 == PAUSED {
-			if job.Status != flowtype.JOB_STATUS_HOLD {
-				job.TimeRequired = 0
-				job.EndTime = time.Now() //TODO Need to check
-				job.Msg = "Migration Paused"
-				job.Status = flowtype.JOB_STATUS_HOLD
-				db.DbAdapter.UpdateJob(job)
-			}
-			log.Printf("JOB PAUSED RETURNING POINT-11 objKey:%s PART: %d  \n", obj.ObjectKey)
-			break
-		}
+	for i = 0; i < partCount; i++ {
 		partNumber := i + 1
 		offset := int64(i) * PART_SIZE
 		if i+1 == partCount {
 			currPartSize = obj.Size - offset
 		}
 		log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
-		log.Println(status3, "this is status ############################################################### IN MultipartCopyObj")
+		status1 := jobstate[job.Id.Hex()]
+		log.Println(status1, "this is status ############################################################### IN MultipartCopyObj")
+		if status1 == ABORTED {
+			err = errors.New(ABORTED)
+			break
+		}
 
-		if partNumber == 1 && resMultipart == true {
+		if partNumber == 1 {
 			// init upload
 			rsp, err := s3client.InitMultipartUpload(ctx, &osdss3.InitMultiPartRequest{
 				BucketName: destLoca.BucketName,
@@ -322,7 +273,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 				Tier:       destLoca.Tier,
 				Location:   destLoca.BakendName,
 				Attrs:      obj.CustomAttributes,
-
 				// TODO: add content-type
 			})
 			if err != nil {
@@ -348,12 +298,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
 			if status2 != ABORTED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
-				if err == nil {
-					partDetail = append(partDetail, model.PartDet{
-						Etag: rsp.Etag,
-						No:   partNumber,
-					})
-				}
 
 			} else if status2 == ABORTED {
 				if job.Status != ABORTED {
@@ -389,41 +333,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			log.Debugln("update job")
 			progress(job, currPartSize, WT_MOVE)
 		}
-	}
-	for j := range job.ObjList {
-		//logger.Printf("job update Inside FOR LOOP objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
-		if job.ObjList[j].ObjKey == obj.ObjectKey {
-			log.Printf("job update OBJECT IDENTIFIED objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
-			job.ObjList[j].UploadId = uploadId
-			job.ObjList[j].PartNo = partNo
-			for m := range partDetail {
-				if len(job.ObjList[j].PartTag) == int(partDetail[m].No)-1 {
-					job.ObjList[j].PartTag = append(job.ObjList[j].PartTag, partDetail[m])
-				}
-			}
-			partDetail = job.ObjList[j].PartTag
-			log.Print("UPDATE STATUS FOR M", job.ObjList[j].ObjKey, job.ObjList[j].Migrated)
-			break
-		}
-	}
-	log.Printf("JOB UPDATED objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
-
-	log.Printf("I, partno, partcount", i, partNo, partCount)
-	if jobstate[job.Id.Hex()] == ABORTED && i != partCount-1 {
-		job.TimeRequired = 0
-		job.Msg = "Migration Aborted"
-		job.Status = flowtype.JOB_STATUS_ABORTED
-		log.Printf("JOB PAUSED RETURNING POINT-4 objKey:%s PART: %d  \n", obj.ObjectKey)
-		return errors.New(job.Msg)
-	}
-
-	if jobstate[job.Id.Hex()] == PAUSED && i != partCount {
-		job.TimeRequired = 0
-		job.Msg = "Migration Paused"
-		job.Status = flowtype.JOB_STATUS_HOLD
-		db.DbAdapter.UpdateJob(job)
-		log.Printf("JOB PAUSED RETURNING POINT-9 objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
-		return errors.New(job.Msg)
 	}
 
 	if err == nil {
