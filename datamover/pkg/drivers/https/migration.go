@@ -121,11 +121,11 @@ func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th c
 		return
 	}
 	if status == PAUSED {
-		if job.Status != flowtype.JOB_STATUS_HOLD {
+		if job.Status != PAUSED {
 			job.TimeRequired = 0
 			job.EndTime = time.Now() //TODO Need to check
 			job.Msg = "Migration Paused"
-			job.Status = flowtype.JOB_STATUS_HOLD
+			job.Status = PAUSED
 			db.DbAdapter.UpdateJob(job)
 		}
 		return
@@ -196,14 +196,14 @@ func CopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, jo
 		return errors.New(job.Status)
 	}
 	if status == PAUSED {
-		if job.Status != flowtype.JOB_STATUS_HOLD {
+		if job.Status != PAUSED {
 			job.TimeRequired = 0
 			job.EndTime = time.Now() //TODO Need to check
 			job.Msg = "Migration Paused"
-			job.Status = flowtype.JOB_STATUS_HOLD
+			job.Status = PAUSED
 			db.DbAdapter.UpdateJob(job)
 		}
-		return errors.New(job.Msg)
+		return errors.New(job.Status)
 	}
 
 	req := &osdss3.CopyObjectRequest{
@@ -399,11 +399,11 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 		}
 	}
 	if status == PAUSED {
-		if job.Status != flowtype.JOB_STATUS_HOLD {
+		if job.Status != PAUSED {
 			job.TimeRequired = 0
 			job.EndTime = time.Now() //TODO Need to check
 			job.Msg = "Migration Paused"
-			job.Status = flowtype.JOB_STATUS_HOLD
+			job.Status = PAUSED
 			db.DbAdapter.UpdateJob(job)
 		}
 	}
@@ -420,6 +420,7 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 			}
 		}
 		if jobstate[job.Id.Hex()] == PAUSED {
+			db.DbAdapter.UpdateJob(job)
 			if job.Status != flowtype.JOB_STATUS_HOLD {
 				job.TimeRequired = 0
 				job.EndTime = time.Now() //TODO Need to check
