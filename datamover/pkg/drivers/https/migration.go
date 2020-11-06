@@ -149,8 +149,8 @@ func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th c
 				job.Msg = "Migration Paused"
 				job.Status = flowtype.JOB_STATUS_HOLD
 				db.DbAdapter.UpdateJob(job)
-				break
 			}
+			break
 		}
 		if objs[i].Tier == s3utils.Tier999 {
 			// archived object cannot be moved currently
