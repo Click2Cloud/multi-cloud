@@ -460,7 +460,11 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 		}
 		//If migrate success, update capacity
 		log.Infof("  migrate object[key=%s,versionid=%s] succeed.", obj.ObjectKey, obj.VersionId)
+		t := <-th
+		log.Printf("[INFO] migrate: consume %d routine, alen(th)=%d\n", t, len(th))
+		log.Printf("[INFO] CAPACITY  bcapa(capa)=%d\n", len(capa))
 		capa <- obj.Size
+		log.Printf("[INFO] CAPACITY  Acapa(capa)=%d\n", len(capa))
 		if job.Type == "migration" {
 			progress(job, obj.Size, WT_DELETE)
 		}
@@ -480,12 +484,7 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 
 		} else {
 			log.Printf("[INFO] migrate object[%s] aborted.", obj.ObjectKey)
-			// To update database at the end of abort or pause migration
 
-			//if len(th) == 0 {
-			//	db.DbAdapter.UpdateObjectList(job)
-			//	logger.Println("Migration Aborted Successfully.")
-			//}
 			log.Printf("[INFO] migrate: consume  blen(th)=%d\n", len(th))
 			t = <-th
 			capa <- -1
@@ -566,23 +565,15 @@ func runjob(in *pb.RunJobRequest) error {
 		log.Printf("[INFO] Migration Resumed")
 		j.TimesResumed++
 	}
-
 	j.Status = flowtype.JOB_STATUS_RUNNING
 	err := initJob(ctx, in, &j)
+	if err != nil {
+		return err
+	}
+
 	var limit int32 = 1000
 	var marker string
 	objs, err := getObjs(ctx, in, marker, limit)
-	if err != nil {
-		log.Printf("[ERROR] Incorrect Credentials")
-		//update database
-		j.Msg = "Incorrect Credentials"
-		log.Printf("FAILED STATUS CHANGED-2")
-		j.Status = flowtype.JOB_STATUS_FAILED
-		j.EndTime = time.Now()
-		j.TimeRequired = int64(0)
-		db.DbAdapter.UpdateJob(&j)
-		return err
-	}
 	if len(j.ObjList) == 0 {
 		for k := range objs {
 			j.ObjList = append(j.ObjList, model.ObjDet{
@@ -592,7 +583,6 @@ func runjob(in *pb.RunJobRequest) error {
 			})
 		}
 	}
-	//db.DbAdapter.UpdateJob(&j)
 	totalObj := len(objs)
 	if totalObj == 0 {
 		log.Printf("[WARN] Bucket is empty.")
@@ -619,14 +609,16 @@ func runjob(in *pb.RunJobRequest) error {
 		updateJob(&j)
 		return err
 	}
-
+	//objToMig:= j.TotalCount-j.PassedCount
 	updateJob(&j)
+	//hhhhh
 	// used to transfer capacity(size) of objects
 	capa := make(chan int64)
 	// concurrent go routines is limited to be simuRoutines
 	th := make(chan int, simuRoutines)
 
 	for {
+
 		log.Println(in.Id, jobstate[in.Id], "this is status  ############################################################### IN run job")
 		objs, err := getObjs(ctx, in, marker, limit)
 		if err != nil {
@@ -643,7 +635,6 @@ func runjob(in *pb.RunJobRequest) error {
 		}
 
 		//Do migration for each object.
-
 		go doMigrate(ctx, objs, capa, th, in, &j)
 
 		if num < int(limit) {
@@ -657,6 +648,7 @@ func runjob(in *pb.RunJobRequest) error {
 	for {
 		select {
 		case c := <-capa:
+			log.Debug(c, "line number 494")
 			{ //if c is less than 0, that means the object is migrated failed.
 				count++
 				if c >= 0 {
@@ -664,20 +656,11 @@ func runjob(in *pb.RunJobRequest) error {
 					capacity += c
 				}
 
-				var deci int64 = totalObjs / 10
-				if totalObjs < 100 || count == totalObjs || count%deci == 0 {
-					//update database
-					j.PassedCount = (int64(passedCount))
-					//j.PassedCapacity = capacity
-					if capacity == j.TotalCapacity {
-						j.TimeRequired = int64(0)
-						j.Progress = int64(capacity * 100 / j.TotalCapacity)
-						log.Printf("[INFO] Progress %d%%", j.Progress)
-					}
-					log.Printf("[INFO] Passed capacity:%d,TotalCapacity:%d Progress:%d\n", capacity, j.TotalCapacity, j.Progress)
-
-					db.DbAdapter.UpdateJob(&j)
-				}
+				//update database
+				j.PassedCount = passedCount
+				j.PassedCapacity = capacity
+				log.Infof("ObjectMigrated:%d,TotalCapacity:%d Progress:%d\n", j.PassedCount, j.TotalCapacity, j.Progress)
+				db.DbAdapter.UpdateJob(&j)
 			}
 		case <-time.After(dur):
 			{
@@ -685,14 +668,8 @@ func runjob(in *pb.RunJobRequest) error {
 				log.Warnln("Timout.")
 			}
 		}
-		if len(th) == 0 {
-			log.Printf("break, capacity=%d, timout=%v, count=%d, passed count=%d\n", capacity, tmout, count, passedCount)
-			close(capa)
-			close(th)
-			log.Printf("EXIT POINT 2: len_capa=%d, len_th=%d \n", len(capa), len(th))
-			break
-		}
 		if count >= totalObjs || tmout {
+			log.Debug(capa, th, "line number 515")
 			log.Infof("break, capacity=%d, timout=%v, count=%d, passed count=%d\n", capacity, tmout, count, passedCount)
 			close(capa)
 			close(th)
@@ -702,58 +679,35 @@ func runjob(in *pb.RunJobRequest) error {
 
 	var ret error = nil
 	j.PassedCount = int64(passedCount)
+	log.Println(in.Id, jobstate[in.Id], "this is status  ############################################################### IN run job")
 	if passedCount < totalObjs {
-		errmsg := strconv.FormatInt(totalObjs, 10) + " objects, passed " + strconv.FormatInt(passedCount, 10)
-		if j.Status == flowtype.JOB_STATUS_ABORTED {
-			log.Printf("[INFO] run job aborted: %s\n", errmsg)
-			log.Printf("[INFO] Migration Aborted")
+		if jobstate[in.Id] == ABORTED {
+			j.Status = ABORTED
 		} else if j.Status == flowtype.JOB_STATUS_HOLD {
-			log.Printf("[INFO] run job Paused: %s\n", errmsg)
+			log.Printf("[INFO] run job Paused: %s\n")
 			log.Printf("[INFO] Migration Paused")
 			j.Status = flowtype.JOB_STATUS_PAUSED
 		} else {
-			log.Printf("[ERROR] run job failed: %s\n", errmsg)
-		}
-		ret = errors.New("failed")
-		if j.Msg == "" {
-			if totalObjs > 1 {
-				j.Msg = "Migration failed: " + strconv.FormatInt(passedCount, 10) + " object migrated out of " + strconv.FormatInt(totalObjs, 10) + " objects"
-			} else {
-				j.Msg = "Migration failed: " + strconv.FormatInt(passedCount, 10) + " object migrated out of " + strconv.FormatInt(totalObjs, 10) + " object"
-			}
-		}
-		if j.Status != flowtype.JOB_STATUS_ABORTED && j.Status != flowtype.JOB_STATUS_PAUSED {
-			log.Printf("FAILED STATUS CHANGED-1")
+			errmsg := strconv.FormatInt(totalObjs, 10) + " objects, passed " + strconv.FormatInt(passedCount, 10)
+			log.Infof("run job failed: %s\n", errmsg)
+			ret = errors.New("failed")
 			j.Status = flowtype.JOB_STATUS_FAILED
 		}
-		//db.DbAdapter.UpdateObjectList(&j)
 	} else {
-
-		if totalObjs > 1 {
-			j.Msg = "Migration Successful: " + strconv.FormatInt(totalObjs, 10) + " objects migrated"
-		} else {
-			j.Msg = "Migration Successful: " + strconv.FormatInt(totalObjs, 10) + " object migrated"
-		}
-		//db.DbAdapter.UpdateObjectList(&j)
-		j.TimeRequired = int64(0)
 		j.Status = flowtype.JOB_STATUS_SUCCEED
-
-		log.Printf("[INFO] Migration Completed Successfully.")
 	}
-	//db.DbAdapter.UpdateObjectList(&j)
+
 	j.EndTime = time.Now()
 	for i := 1; i <= 3; i++ {
-		db.DbAdapter.UpdateObjectList(&j)
 		err := db.DbAdapter.UpdateJob(&j)
-		//db.DbAdapter.UpdateObjectList(&j)
 		if err == nil {
 			break
 		}
 		if i == 3 {
-			log.Printf("[ERROR] update the finish status of job in database failed three times, no need to try more.")
+			log.Infof("update the finish status of job in database failed three times, no need to try more.")
 		}
 	}
-	//db.DbAdapter.UpdateObjectList(&j)
+
 	return ret
 }
 
