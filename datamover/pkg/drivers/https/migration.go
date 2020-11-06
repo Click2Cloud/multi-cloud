@@ -686,7 +686,7 @@ func runjob(in *pb.RunJobRequest) error {
 		} else if j.Status == flowtype.JOB_STATUS_HOLD {
 			log.Printf("[INFO] run job Paused: %s\n")
 			log.Printf("[INFO] Migration Paused")
-			j.Status = flowtype.JOB_STATUS_PAUSED
+			j.Status = flowtype.JOB_STATUS_HOLD
 		} else {
 			errmsg := strconv.FormatInt(totalObjs, 10) + " objects, passed " + strconv.FormatInt(passedCount, 10)
 			log.Infof("run job failed: %s\n", errmsg)

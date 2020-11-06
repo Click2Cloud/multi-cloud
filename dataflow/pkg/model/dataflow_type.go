@@ -42,10 +42,8 @@ var (
 	JOB_STATUS_SUCCEED   = "succeed"
 	JOB_STATUS_FAILED    = "failed"
 	JOB_STATUS_ABORTED   = "aborted"
-	JOB_STATUS_RESUMED   = "running"
 	JOB_STATUS_CANCELLED = "cancelled"
-	JOB_STATUS_PAUSED    = "paused"
-	JOB_STATUS_HOLD      = "migration on hold"
+	JOB_STATUS_HOLD      = "paused"
 	JOB_STATUS_RESUME    = "resuming"
 )
 

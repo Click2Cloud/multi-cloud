@@ -144,7 +144,7 @@ func (b *datamoverService) PauseJob(ctx context.Context, in *pb.PauseJobRequest,
 		out.Status = jobstatus
 		return nil
 	}
-	if jobstatus == model.JOB_STATUS_PAUSED {
+	if jobstatus == model.JOB_STATUS_HOLD {
 		out.Err = "job is already Paused"
 		out.Id = in.Id
 		out.Status = jobstatus
