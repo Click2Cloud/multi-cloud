@@ -571,8 +571,10 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 }
 
 func updateJob(j *flowtype.Job) {
+		log.Println(j)
 	for i := 1; i <= 3; i++ {
 		err := db.DbAdapter.UpdateJob(j)
+		log.Println(i)
 		if err == nil {
 			break
 		}
