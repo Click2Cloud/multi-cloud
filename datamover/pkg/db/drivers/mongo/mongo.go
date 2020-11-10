@@ -268,12 +268,6 @@ func (ad *adapter) UpdateObjectList(job *Job) error {
 				if len(j.ObjList[k].PartTag) < len(job.ObjList[m].PartTag) {
 					j.ObjList[k].PartTag = job.ObjList[m].PartTag
 				}
-				//for t := range job.ObjList[m].PartTag {
-				//	j.ObjList = append(partDetail,PartDet{
-				//		Etag:   job.ObjList[m].PartTag[t].Etag,
-				//		No: job.ObjList[m].PartTag[t].No,
-				//	})
-				//}
 
 				log.Println("UPDATE STATUS FOR %s %s %s", j.ObjList[k].ObjKey, j.ObjList[k].Migrated, job.ObjList[m].ObjKey)
 				break

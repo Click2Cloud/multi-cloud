@@ -92,7 +92,7 @@ func HandleMsg(msgData []byte) error {
 
 	if status != flowtype.JOB_STATUS_PENDING {
 		if status == flowtype.JOB_STATUS_RESUME {
-			log.Print("**************************************************************************RESUMING*********************************************************************************************************")
+			log.Print("***********************RESUMING***********************")
 
 			log.Printf("job[id#%s] is %s.\n", job.Id, flowtype.JOB_STATUS_RESUME)
 		} else {
@@ -242,6 +242,15 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		}
 		return errors.New(job.Status)
 	}
+	if status == PAUSED {
+		if job.Status != PAUSED {
+			job.EndTime = time.Now()
+			job.Status = PAUSED
+			job.EndTime = time.Now()
+			db.DbAdapter.UpdateJob(job)
+		}
+		return errors.New(job.Status)
+	}
 	log.Infof("*****Copy object[%s] from #%s# to #%s#, size=%d, partCount=%d.\n", obj.ObjectKey, obj.BucketName,
 		destLoca.BucketName, obj.Size, partCount)
 
@@ -250,9 +259,24 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	var uploadId string
 	var initSucceed bool = false
 	var completeParts []*osdss3.CompletePart
+	var partNo int64 = 1
+	tempArr := []model.PartDet{}
+	var resMultipart = false
 	currPartSize := PART_SIZE
-	for i = 0; i < partCount; i++ {
+	for m := range job.ObjList {
+		if job.ObjList[m].ObjKey == obj.ObjectKey && job.ObjList[m].PartNo != 0 {
+			partNo = job.ObjList[m].PartNo
+			uploadId = job.ObjList[m].UploadId
+			log.Printf("[INFO] MIGRATION RESUMING objKey:%s \n", obj.ObjectKey)
+			log.Print("GOT PART NO for ", job.ObjList[m].ObjKey, job.ObjList[m].UploadId, job.ObjList[m])
+			resMultipart = true
+			break
+		}
+	}
+	for i = partNo - 1; i < partCount; i++ {
+
 		partNumber := i + 1
+
 		offset := int64(i) * PART_SIZE
 		if i+1 == partCount {
 			currPartSize = obj.Size - offset
@@ -264,8 +288,12 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			err = errors.New(ABORTED)
 			break
 		}
+		if status1 == PAUSED {
+			err = nil
+			break
+		}
 
-		if partNumber == 1 {
+		if partNumber == 1 || resMultipart == true {
 			// init upload
 			rsp, err := s3client.InitMultipartUpload(ctx, &osdss3.InitMultiPartRequest{
 				BucketName: destLoca.BucketName,
@@ -289,6 +317,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			TargetBucket: destLoca.BucketName, TargetObject: obj.ObjectKey, PartID: partNumber,
 			UploadID: uploadId, ReadOffset: offset, ReadLength: currPartSize, TargetLocation: destLoca.BakendName,
 		}
+
 		var rsp *osdss3.CopyObjPartResponse
 		try := 0
 		tmoutSec := currPartSize / MiniSpeed
@@ -299,10 +328,23 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			if status2 != ABORTED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
 
+				tempArr = append(tempArr, model.PartDet{
+					Etag: rsp.Etag,
+					No:   partNumber,
+				})
+
 			} else if status2 == ABORTED {
 				if job.Status != ABORTED {
 					job.EndTime = time.Now()
 					job.Status = ABORTED
+					job.EndTime = time.Now()
+					db.DbAdapter.UpdateJob(job)
+				}
+				break
+			} else if status2 == PAUSED {
+				if job.Status != PAUSED {
+					job.EndTime = time.Now()
+					job.Status = PAUSED
 					job.EndTime = time.Now()
 					db.DbAdapter.UpdateJob(job)
 				}
@@ -325,17 +367,44 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 
 		log.Debugf("copy part[obj=%s, uploadId=%s, ReadOffset=%d, ReadLength=%d] succeed\n", obj.ObjectKey,
 			uploadId, offset, currPartSize)
+		log.Println(rsp, "  Etag  ", rsp.Etag)
 		completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
 		completeParts = append(completeParts, completePart)
-
 		// update job progress
 		if job != nil {
 			log.Debugln("update job")
 			progress(job, currPartSize, WT_MOVE)
 		}
+		resMultipart = false
+	}
+	for j := range job.ObjList {
+		//logger.Printf("job update Inside FOR LOOP objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
+		if job.ObjList[j].ObjKey == obj.ObjectKey {
+			log.Printf("job update OBJECT IDENTIFIED objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
+			job.ObjList[j].UploadId = uploadId
+			job.ObjList[j].PartNo = partNo
+			for m := range tempArr {
+				if len(job.ObjList[j].PartTag) == int(tempArr[m].No)-1 {
+					job.ObjList[j].PartTag = append(job.ObjList[j].PartTag, tempArr[m])
+				}
+			}
+			tempArr = job.ObjList[j].PartTag
+			log.Print("UPDATE STATUS FOR M", job.ObjList[j].ObjKey, job.ObjList[j].Migrated)
+			break
+		}
+	}
+	if jobstate[job.Id.Hex()] == PAUSED && i != partCount {
+		job.TimeRequired = 0
+		job.Msg = "Migration Paused"
+		job.Status = flowtype.JOB_STATUS_HOLD
+		db.DbAdapter.UpdateJob(job)
+		log.Printf("JOB PAUSED RETURNING POINT-9 objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
+		return errors.New(job.Msg)
 	}
 
-	if err == nil {
+	StatusCheck := jobstate[job.Id.Hex()]
+
+	if err == nil && StatusCheck != PAUSED {
 		// copy parts succeed, need to complete it
 		completeReq := &osdss3.CompleteMultipartRequest{BucketName: destLoca.BucketName, ObjectKey: obj.ObjectKey,
 			UploadId: uploadId, CompleteParts: completeParts, SourceVersionID: obj.VersionId}
@@ -349,7 +418,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		}
 	}
 
-	if err != nil {
+	if err != nil && StatusCheck != PAUSED {
 		if initSucceed == true {
 			log.Debugf("abort multipart copy, bucket:%s, object:%s, uploadid:%s\n", destLoca.BucketName, obj.ObjectKey, uploadId)
 			_, ierr := s3client.AbortMultipartUpload(ctx, &osdss3.AbortMultipartRequest{BucketName: destLoca.BucketName,
@@ -543,7 +612,7 @@ func initJob(ctx context.Context, in *pb.RunJobRequest, j *flowtype.Job) error {
 func runjob(in *pb.RunJobRequest) error {
 	log.Infoln("Runjob is called in datamover service.")
 	log.Infof("Request: %+v\n", in)
-	log.Println(in.Id, "this is job ID ############################################################### IN runjob")
+	log.Println(in.Id, "this is job ID ****************IN runjob")
 	// set context tiemout
 	ctx := metadata.NewContext(context.Background(), map[string]string{
 		common.CTX_KEY_USER_ID:   in.UserId,
