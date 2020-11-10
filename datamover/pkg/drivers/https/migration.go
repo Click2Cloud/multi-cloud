@@ -644,6 +644,7 @@ func runjob(in *pb.RunJobRequest) error {
 	var limit int32 = 1000
 	var marker string
 	objs, err := getObjs(ctx, in, marker, limit)
+
 	if len(j.ObjList) == 0 {
 		for k := range objs {
 			j.ObjList = append(j.ObjList, model.ObjDet{
@@ -652,6 +653,10 @@ func runjob(in *pb.RunJobRequest) error {
 				Migrated: false,
 			})
 		}
+	} else {
+		log.Println("**********************job has object list*********************************")
+		log.Println(j.ObjList, "<-------------------------------------------------------")
+
 	}
 	totalObj := len(objs)
 	if totalObj == 0 {
@@ -690,7 +695,7 @@ func runjob(in *pb.RunJobRequest) error {
 	for {
 
 		log.Println(in.Id, jobstate[in.Id], "this is status  ############################################################### IN run job")
-		objs, err := getObjs(ctx, in, marker, limit)
+		//objs, err := getObjs(ctx, in, marker, limit)
 		if err != nil {
 			//update database
 			j.Status = flowtype.JOB_STATUS_FAILED
