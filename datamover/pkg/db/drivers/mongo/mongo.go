@@ -108,6 +108,10 @@ func (ad *adapter) UpdateJob(job *Job) error {
 	if job.Progress != 0 {
 		j.Progress = job.Progress
 	}
+	if job.ObjList != nil {
+		j.ObjList = job.ObjList
+		log.Println(j.ObjList, "In update ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+	}
 
 	err = c.Update(bson.M{"_id": j.Id}, &j)
 	if err != nil {
