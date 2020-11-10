@@ -16,6 +16,7 @@ package model
 
 import (
 	"errors"
+	osdss3 "github.com/opensds/multi-cloud/s3/proto"
 	"time"
 
 	"github.com/globalsign/mgo"
@@ -133,11 +134,11 @@ type Plan struct {
 	UserId        string    `json:"userId" bson:"userId"`
 }
 type ObjDet struct {
-	ObjKey   string    `json:"objKey" bson:"objKey"`
-	UploadId string    `json:"uploadId" bson:"uploadId"`
-	PartNo   int64     `json:"partNo" bson:"partNo"`
-	Migrated bool      `json:"migrated" bson:"migrated"`
-	PartTag  []PartDet `json:"partTag" bson:"partTag"`
+	ObjKey   string                 `json:"objKey" bson:"objKey"`
+	UploadId string                 `json:"uploadId" bson:"uploadId"`
+	PartNo   int64                  `json:"partNo" bson:"partNo"`
+	Migrated bool                   `json:"migrated" bson:"migrated"`
+	PartTag  []*osdss3.CompletePart `json:"partTag" bson:"partTag"`
 }
 type PartDet struct {
 	Etag string `json:"etag" bson:"etag"`

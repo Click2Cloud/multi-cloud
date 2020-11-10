@@ -260,7 +260,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	var initSucceed bool = false
 	var completeParts []*osdss3.CompletePart
 	var partNo int64 = 1
-	tempArr := []model.PartDet{}
 	var resMultipart = false
 	currPartSize := PART_SIZE
 	for m := range job.ObjList {
@@ -327,11 +326,12 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
 			if status2 != ABORTED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
-
-				tempArr = append(tempArr, model.PartDet{
-					Etag: rsp.Etag,
-					No:   partNumber,
-				})
+				completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
+				completeParts = append(completeParts, completePart)
+				//tempArr = append(tempArr, model.PartDet{
+				//	Etag: rsp.Etag,
+				//	No:   partNumber,
+				//})
 
 			} else if status2 == ABORTED {
 				if job.Status != ABORTED {
@@ -368,8 +368,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		log.Debugf("copy part[obj=%s, uploadId=%s, ReadOffset=%d, ReadLength=%d] succeed\n", obj.ObjectKey,
 			uploadId, offset, currPartSize)
 		log.Println(rsp, "  Etag  ", rsp.Etag)
-		completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
-		completeParts = append(completeParts, completePart)
+
 		// update job progress
 		if job != nil {
 			log.Debugln("update job")
@@ -383,13 +382,14 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			log.Printf("job update OBJECT IDENTIFIED objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
 			job.ObjList[j].UploadId = uploadId
 			job.ObjList[j].PartNo = partNo
-			for m := range tempArr {
-				if len(job.ObjList[j].PartTag) == int(tempArr[m].No)-1 {
-					job.ObjList[j].PartTag = append(job.ObjList[j].PartTag, tempArr[m])
+			for m := range completeParts {
+				if len(job.ObjList[j].PartTag) == int(completeParts[m].PartNumber)-1 {
+					job.ObjList[j].PartTag = append(job.ObjList[j].PartTag, completeParts[m])
 				}
 			}
-			tempArr = job.ObjList[j].PartTag
+			completeParts = job.ObjList[j].PartTag
 			log.Print("UPDATE STATUS FOR M", job.ObjList[j].ObjKey, job.ObjList[j].Migrated)
+			db.DbAdapter.UpdateJob(job)
 			break
 		}
 	}
