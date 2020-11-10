@@ -125,19 +125,11 @@ func (ad *adapter) UpdateJob(job *Job) error {
 	if job.TimesResumed != 0 {
 		j.TimesResumed = job.TimesResumed
 	}
-	if len(j.ObjList) < len(job.ObjList) {
-		for k := range job.ObjList {
-
-			j.ObjList = append(j.ObjList, ObjDet{
-				ObjKey:   job.ObjList[k].ObjKey,
-				UploadId: job.ObjList[k].UploadId,
-				PartNo:   job.ObjList[k].PartNo,
-				Migrated: job.ObjList[k].Migrated,
-				PartTag:  job.ObjList[k].PartTag,
-			})
-
-		}
+	if job.ObjList != nil {
+		j.ObjList = job.ObjList
+		log.Println(j.ObjList, "In update ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 	}
+
 	err = c.Update(bson.M{"_id": j.Id}, &j)
 	if err != nil {
 		log.Errorf("Update job in database failed, err:%v\n", err)
