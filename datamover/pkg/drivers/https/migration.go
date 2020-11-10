@@ -648,12 +648,13 @@ func runjob(in *pb.RunJobRequest) error {
 	if len(j.ObjList) == 0 {
 		log.Println(j.ObjList, "_*********************$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 		for k := range objs {
-
+			log.Println("inside looop-------------->>>>>>>>", k, "_*********************$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 			j.ObjList = append(j.ObjList, model.ObjDet{
 				ObjKey:   objs[k].ObjectKey,
 				UploadId: "",
 				Migrated: false,
 			})
+			log.Println(j.ObjList, "objects ___________")
 			updateJob(&j)
 		}
 	} else {
