@@ -130,8 +130,10 @@ func (ad *adapter) UpdateJob(job *Job) error {
 
 			j.ObjList = append(j.ObjList, ObjDet{
 				ObjKey:   job.ObjList[k].ObjKey,
-				UploadId: "",
-				Migrated: false,
+				UploadId: job.ObjList[k].UploadId,
+				PartNo:   job.ObjList[k].PartNo,
+				Migrated: job.ObjList[k].Migrated,
+				PartTag:  job.ObjList[k].PartTag,
 			})
 
 		}
