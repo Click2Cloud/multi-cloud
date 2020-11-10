@@ -646,12 +646,15 @@ func runjob(in *pb.RunJobRequest) error {
 	objs, err := getObjs(ctx, in, marker, limit)
 
 	if len(j.ObjList) == 0 {
+		log.Println(j.ObjList, "_*********************$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 		for k := range objs {
+
 			j.ObjList = append(j.ObjList, model.ObjDet{
 				ObjKey:   objs[k].ObjectKey,
 				UploadId: "",
 				Migrated: false,
 			})
+			updateJob(&j)
 		}
 	} else {
 		log.Println("**********************job has object list*********************************")
