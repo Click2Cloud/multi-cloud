@@ -446,8 +446,9 @@ func Resume(planId, tenantId, userId string) (*Job, error) {
 	req.RemainSource = job.RemainSource
 	log.Print(job.RemainSource, "in remume **********")
 	job.Status = JOB_STATUS_RESUME
-	datamoverDb.DbAdapter.UpdateJob(job)
 	log.Println(job, "job check ^^^^^^++++++++++++++^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", req, "check request **************")
+	datamoverDb.DbAdapter.UpdateJob(job)
+
 	go sendJob(&req)
 	return job, nil
 }
