@@ -39,11 +39,7 @@ type dataflowService struct{}
 func (b *dataflowService) ResumeJob(ctx context.Context, in *pb.ResumeJobRequest, out *pb.ResumeJobResponse) error {
 	log.Info("Resume job is called in dataflow service.")
 	actx := context.Background()
-	tenantId, err := utils.GetTenantId(ctx)
-	if err != nil {
-		log.Errorf("run plan failed, err=%v\n", err)
-		return err
-	}
+	tenantId := "Tenantid"
 
 	if in.Id == "" {
 		errmsg := fmt.Sprint("No id specified.")
