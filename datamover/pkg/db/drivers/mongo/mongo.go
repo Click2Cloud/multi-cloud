@@ -71,6 +71,8 @@ func (ad *adapter) GetJobStatus(jobID string) string {
 
 func (ad *adapter) UpdateJob(job *Job) error {
 	//	ss := ad.s.Copy()
+
+	log.Println("in update job ####################")
 	ss := ad.s.New()
 	ad.s.New()
 	defer ss.Close()
