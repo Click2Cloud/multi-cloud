@@ -384,10 +384,10 @@ func (p *TriggerExecutor) Run() {
 		log.Errorf("PlanExcutor run plan(%s) error, jobid:%s, error:%v", p.planId, jobId, err)
 	}
 }
-func Resume(ctx context.Context, id string, tenantId string) (*Job, error) {
+func Resume(userid string, id string, tenantId string) (*Job, error) {
 	//Get information from database
 	// Get plan id from job id
-
+	ctx := context.Background()
 	job, err := db.DbAdapter.GetJob(ctx, id)
 	if err != nil {
 		return nil, err
@@ -443,7 +443,7 @@ func Resume(ctx context.Context, id string, tenantId string) (*Job, error) {
 	//go p.SendJob(&req)
 	filt := datamover.Filter{Prefix: plan.Filter.Prefix}
 	req := datamover.RunJobRequest{
-		Id: job.Id.Hex(), TenanId: tenantId, UserId: job.UserId,
+		Id: job.Id.Hex(), TenanId: tenantId, UserId: userid,
 		RemainSource: plan.RemainSource, Filt: &filt,
 	}
 	srcConn := datamover.Connector{Type: plan.SourceConn.StorType}
