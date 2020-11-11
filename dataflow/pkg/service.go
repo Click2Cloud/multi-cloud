@@ -36,6 +36,35 @@ import (
 
 type dataflowService struct{}
 
+func (b *dataflowService) ResumeJob(ctx context.Context, in *pb.ResumeJobRequest, out *pb.ResumeJobResponse) error {
+	log.Info("Resume job is called in dataflow service.")
+	actx := context.Background()
+	tenantId, err := utils.GetTenantId(ctx)
+	if err != nil {
+		log.Errorf("run plan failed, err=%v\n", err)
+		return err
+	}
+
+	if in.Id == "" {
+		errmsg := fmt.Sprint("No id specified.")
+		out.Err = errmsg
+		return errors.New(errmsg)
+	}
+
+	jb, err := plan.Resume(actx, in.Id, tenantId)
+	if err != nil {
+		log.Info("Resume job err:%d.", err)
+		out.Err = err.Error()
+		return nil
+	} else {
+		out.Job = &pb.Job{Id: string(jb.Id.Hex()), Type: jb.Type, PlanName: jb.PlanName, PlanId: jb.PlanId,
+			Description: "for test", SourceLocation: jb.SourceLocation, DestLocation: jb.DestLocation,
+			StartTime: jb.StartTime.Unix(), EndTime: jb.EndTime.Unix(), Status: jb.Status, TotalCapacity: jb.TotalCapacity,
+			PassedCapacity: jb.PassedCapacity, TotalCount: jb.TotalCount, PassedCount: jb.PassedCount, Progress: jb.Progress}
+	}
+	return nil
+}
+
 func (b *dataflowService) ChangeStatus(ctx context.Context, request *pb.ChangeStatusRequest, response *pb.ChangeStatusResponse) error {
 	status := request.ChangeStatus.Status
 	var err error

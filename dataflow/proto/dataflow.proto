@@ -15,6 +15,16 @@ service DataFlow {
 	rpc ListJob(ListJobRequest) returns (ListJobResponse) {}
 	rpc RunPlan(RunPlanRequest) returns (RunPlanResponse) {}
 	rpc ChangeStatus(ChangeStatusRequest) returns (ChangeStatusResponse) {}
+	rpc ResumeJob(ResumeJobRequest) returns (ResumeJobResponse) {}
+}
+message ResumeJobRequest {
+	string context = 1;
+	string id = 2;
+}
+
+message ResumeJobResponse {
+	string err = 1;
+	Job job = 2;
 }
 
 message ChangeStatusRequest{

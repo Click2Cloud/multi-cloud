@@ -502,3 +502,20 @@ func (s *APIService) ListJob(request *restful.Request, response *restful.Respons
 	log.Info("List jobs successfully.")
 	response.WriteEntity(res)
 }
+
+func (s *APIService) ResumeJob(request *restful.Request, response *restful.Response) {
+	if !policy.Authorize(request, response, "plan:run") {
+		return
+	}
+	actx := request.Attribute(c.KContext).(*c.Context)
+	id := request.PathParameter("id")
+	log.Info("Received request for Resume Job[id=%s] details.\n", id)
+	ctx := common.InitCtxWithAuthInfo(request)
+	res, err := s.dataflowClient.ResumeJob(ctx, &dataflow.ResumeJobRequest{Context: actx.ToJson(), Id: id})
+	if err != nil {
+		response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+
+	response.WriteEntity(res)
+}

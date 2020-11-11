@@ -28,6 +28,7 @@ import (
 	"github.com/opensds/multi-cloud/dataflow/pkg/kafka"
 	. "github.com/opensds/multi-cloud/dataflow/pkg/model"
 	"github.com/opensds/multi-cloud/dataflow/pkg/scheduler/trigger"
+	datamoverDb "github.com/opensds/multi-cloud/datamover/pkg/db"
 	"github.com/opensds/multi-cloud/datamover/proto"
 	log "github.com/sirupsen/logrus"
 )
@@ -382,4 +383,80 @@ func (p *TriggerExecutor) Run() {
 	if err != nil {
 		log.Errorf("PlanExcutor run plan(%s) error, jobid:%s, error:%v", p.planId, jobId, err)
 	}
+}
+func Resume(ctx context.Context, id string, tenantId string) (*Job, error) {
+	//Get information from database
+	// Get plan id from job id
+
+	job, err := db.DbAdapter.GetJob(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO CHECK STATUS OF JOB
+	// TODO CHECK IF NOT EQUAL TO PAUSE RETURN ERROR
+	// If job is already finished or failed it can not be resumed
+	if job.Status == JOB_STATUS_SUCCEED {
+		return nil, errors.New("Job already finished")
+	}
+
+	if job.Status != JOB_STATUS_HOLD {
+		return job, errors.New("Job can not be resumed")
+	}
+
+	//
+	plan, err := db.DbAdapter.GetPlan(ctx, job.PlanId)
+	if err != nil {
+		return job, err
+	}
+
+	//scheduling must be mutual excluded among several schedulers
+	//Get Lock
+	ret := db.DbAdapter.LockSched(tenantId, string(plan.Id.Hex()))
+	for i := 0; i < 3; i++ {
+		if ret == LockSuccess {
+			//Make sure unlock before return
+			defer db.DbAdapter.UnlockSched(tenantId, string(plan.Id.Hex()))
+			break
+		} else if ret == LockBusy {
+			return nil, ERR_RUN_PLAN_BUSY
+		} else {
+			//Try to lock again, try three times at most
+			ret = db.DbAdapter.LockSched(tenantId, string(plan.Id.Hex()))
+		}
+	}
+
+	//TODO: change to send job to datamover by kafka
+	//This way send job is the temporary
+	//filt := datamover.Filter{Prefix: plan.Filter.Prefix, ObjectList: plan.Filter.ObjectList}
+	//req := datamover.RunJobRequest{Id: jobdet.Id.Hex(), RemainSource: plan.RemainSource, Filt: &filt}
+	//srcConn := datamover.Connector{Type: plan.SourceConn.StorType}
+	//p.BuildConn(&srcConn, &plan.SourceConn)
+	//req.SourceConn = &srcConn
+	//destConn := datamover.Connector{Type: plan.DestConn.StorType}
+	//p.BuildConn(&destConn, &plan.DestConn)
+	//req.DestConn = &destConn
+	//req.RemainSource = jobdet.RemainSource
+	//jobdet.Status = JOB_STATUS_RESUME
+	//jobdet.Msg = ""
+	//db.DbAdapter.UpdateJob(jobdet)
+	//go p.SendJob(&req)
+	filt := datamover.Filter{Prefix: plan.Filter.Prefix}
+	req := datamover.RunJobRequest{
+		Id: job.Id.Hex(), TenanId: tenantId, UserId: job.UserId,
+		RemainSource: plan.RemainSource, Filt: &filt,
+	}
+	srcConn := datamover.Connector{Type: plan.SourceConn.StorType}
+	buildConn(&srcConn, &plan.SourceConn)
+	req.SourceConn = &srcConn
+	destConn := datamover.Connector{Type: plan.DestConn.StorType}
+	buildConn(&destConn, &plan.DestConn)
+	req.DestConn = &destConn
+	req.RemainSource = job.RemainSource
+	log.Print(job.RemainSource, "in remume **********")
+	job.Status = JOB_STATUS_RESUME
+	datamoverDb.DbAdapter.UpdateJob(job)
+	log.Println(job, "job check ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", req, "check request **************")
+	go sendJob(&req)
+	return job, nil
 }
