@@ -384,11 +384,14 @@ func (p *TriggerExecutor) Run() {
 		log.Errorf("PlanExcutor run plan(%s) error, jobid:%s, error:%v", p.planId, jobId, err)
 	}
 }
-func Resume(userid string, id string, tenantId string) (*Job, error) {
+func Resume(planId, tenantId, userId string) (*Job, error) {
+	ctx := metadata.NewContext(context.Background(), map[string]string{
+		common.CTX_KEY_USER_ID:   userId,
+		common.CTX_KEY_TENANT_ID: tenantId,
+	})
 	//Get information from database
 	// Get plan id from job id
-	ctx := context.Background()
-	job, err := db.DbAdapter.GetJob(ctx, id)
+	job, err := db.DbAdapter.GetJob(ctx, planId)
 	if err != nil {
 		return nil, err
 	}
@@ -428,22 +431,10 @@ func Resume(userid string, id string, tenantId string) (*Job, error) {
 
 	//TODO: change to send job to datamover by kafka
 	//This way send job is the temporary
-	//filt := datamover.Filter{Prefix: plan.Filter.Prefix, ObjectList: plan.Filter.ObjectList}
-	//req := datamover.RunJobRequest{Id: jobdet.Id.Hex(), RemainSource: plan.RemainSource, Filt: &filt}
-	//srcConn := datamover.Connector{Type: plan.SourceConn.StorType}
-	//p.BuildConn(&srcConn, &plan.SourceConn)
-	//req.SourceConn = &srcConn
-	//destConn := datamover.Connector{Type: plan.DestConn.StorType}
-	//p.BuildConn(&destConn, &plan.DestConn)
-	//req.DestConn = &destConn
-	//req.RemainSource = jobdet.RemainSource
-	//jobdet.Status = JOB_STATUS_RESUME
-	//jobdet.Msg = ""
-	//db.DbAdapter.UpdateJob(jobdet)
-	//go p.SendJob(&req)
+
 	filt := datamover.Filter{Prefix: plan.Filter.Prefix}
 	req := datamover.RunJobRequest{
-		Id: job.Id.Hex(), TenanId: tenantId, UserId: userid,
+		Id: job.Id.Hex(), TenanId: tenantId, UserId: userId,
 		RemainSource: plan.RemainSource, Filt: &filt,
 	}
 	srcConn := datamover.Connector{Type: plan.SourceConn.StorType}

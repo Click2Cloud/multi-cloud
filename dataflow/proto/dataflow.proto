@@ -18,13 +18,12 @@ service DataFlow {
 	rpc ResumeJob(ResumeJobRequest) returns (ResumeJobResponse) {}
 }
 message ResumeJobRequest {
-	string context = 1;
-	string id = 2;
+	string id = 1;
 }
 
 message ResumeJobResponse {
 	string err = 1;
-	Job job = 2;
+    string jobId = 2;
 }
 
 message ChangeStatusRequest{

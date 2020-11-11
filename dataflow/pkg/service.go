@@ -54,16 +54,14 @@ func (b *dataflowService) ResumeJob(ctx context.Context, in *pb.ResumeJobRequest
 		return errors.New(errmsg)
 	}
 
-	jb, err := plan.Resume(userId, in.Id, tenantId)
+	jb, err := plan.Resume(in.Id, tenantId, userId)
 	if err != nil {
 		log.Info("Resume job err:%d.", err)
 		out.Err = err.Error()
 		return nil
 	} else {
-		out.Job = &pb.Job{Id: string(jb.Id.Hex()), Type: jb.Type, PlanName: jb.PlanName, PlanId: jb.PlanId,
-			Description: "for test", SourceLocation: jb.SourceLocation, DestLocation: jb.DestLocation,
-			StartTime: jb.StartTime.Unix(), EndTime: jb.EndTime.Unix(), Status: jb.Status, TotalCapacity: jb.TotalCapacity,
-			PassedCapacity: jb.PassedCapacity, TotalCount: jb.TotalCount, PassedCount: jb.PassedCount, Progress: jb.Progress}
+		out.JobId = string(jb.Id)
+		out.Err = ""
 	}
 	return nil
 }
