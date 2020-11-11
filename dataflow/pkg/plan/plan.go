@@ -456,7 +456,7 @@ func Resume(ctx context.Context, id string, tenantId string) (*Job, error) {
 	log.Print(job.RemainSource, "in remume **********")
 	job.Status = JOB_STATUS_RESUME
 	datamoverDb.DbAdapter.UpdateJob(job)
-	log.Println(job, "job check ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", req, "check request **************")
+	log.Println(job, "job check ^^^^^^++++++++++++++^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", req, "check request **************")
 	go sendJob(&req)
 	return job, nil
 }

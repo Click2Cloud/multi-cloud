@@ -38,16 +38,23 @@ type dataflowService struct{}
 
 func (b *dataflowService) ResumeJob(ctx context.Context, in *pb.ResumeJobRequest, out *pb.ResumeJobResponse) error {
 	log.Info("Resume job is called in dataflow service.")
-	actx := context.Background()
-	tenantId := "Tenantid"
-
+	tenantId, err := utils.GetTenantId(ctx)
+	if err != nil {
+		log.Errorf("run plan failed, err=%v\n", err)
+		return err
+	}
+	userId, err := utils.GetUserId(ctx)
+	if err != nil {
+		log.Errorf("run plan failed, err=%v\n", err)
+		return err
+	}
 	if in.Id == "" {
 		errmsg := fmt.Sprint("No id specified.")
 		out.Err = errmsg
 		return errors.New(errmsg)
 	}
 
-	jb, err := plan.Resume(actx, in.Id, tenantId)
+	jb, err := plan.Resume(userId, in.Id, tenantId)
 	if err != nil {
 		log.Info("Resume job err:%d.", err)
 		out.Err = err.Error()
