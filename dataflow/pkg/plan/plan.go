@@ -28,7 +28,6 @@ import (
 	"github.com/opensds/multi-cloud/dataflow/pkg/kafka"
 	. "github.com/opensds/multi-cloud/dataflow/pkg/model"
 	"github.com/opensds/multi-cloud/dataflow/pkg/scheduler/trigger"
-	datamoverDb "github.com/opensds/multi-cloud/datamover/pkg/db"
 	"github.com/opensds/multi-cloud/datamover/proto"
 	log "github.com/sirupsen/logrus"
 )
@@ -447,7 +446,7 @@ func Resume(planId, tenantId, userId string) (*Job, error) {
 	log.Print(job.RemainSource, "in remume **********")
 	job.Status = JOB_STATUS_RESUME
 	log.Println(job, "job check ^^^^^^++++++++++++++^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", req, "check request **************")
-	datamoverDb.DbAdapter.UpdateJob(job)
+	db.DbAdapter.UpdateJob(job)
 
 	go sendJob(&req)
 	return job, nil
