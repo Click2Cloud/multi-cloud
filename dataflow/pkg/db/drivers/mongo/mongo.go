@@ -813,6 +813,9 @@ func (ad *adapter) UpdateJob(job *Job) error {
 	if job.Progress != 0 {
 		j.Progress = job.Progress
 	}
+	if job.MigratedCapacity != 0 {
+		j.MigratedCapacity = job.MigratedCapacity
+	}
 	if job.TimeRequired != 0 {
 		j.TimeRequired = job.TimeRequired
 	}
