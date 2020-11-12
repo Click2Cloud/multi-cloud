@@ -694,6 +694,7 @@ func runjob(in *pb.RunJobRequest) error {
 	//hhhhh
 	// used to transfer capacity(size) of objects
 	capa := make(chan int64)
+	capa <- j.PassedCapacity
 	// concurrent go routines is limited to be simuRoutines
 	th := make(chan int, simuRoutines)
 
@@ -729,6 +730,7 @@ func runjob(in *pb.RunJobRequest) error {
 	for {
 		select {
 		case c := <-capa:
+
 			log.Debug(c, "line number 494")
 			{ //if c is less than 0, that means the object is migrated failed.
 				count++
