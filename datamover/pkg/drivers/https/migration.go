@@ -571,7 +571,7 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 }
 
 func updateJob(j *flowtype.Job) {
-		log.Println(j)
+	log.Println(j)
 	for i := 1; i <= 3; i++ {
 		err := db.DbAdapter.UpdateJob(j)
 		log.Println(i)
@@ -725,6 +725,14 @@ func runjob(in *pb.RunJobRequest) error {
 	}
 
 	var capacity, count, passedCount, totalObjs int64 = 0, 0, 0, j.TotalCount
+
+	if j.PassedCount != 0 {
+		passedCount = j.PassedCount
+	}
+	if j.PassedCapacity != 0 {
+		capacity = j.PassedCapacity
+	}
+
 	tmout := false
 	for {
 		select {
@@ -732,8 +740,10 @@ func runjob(in *pb.RunJobRequest) error {
 			log.Debug(c, "line number 494")
 			{ //if c is less than 0, that means the object is migrated failed.
 				count++
+				log.Println(count, "this is count of obect")
 				if c >= 0 {
 					passedCount++
+					log.Println(count, "this is count of passedobect")
 					capacity += c
 				}
 
@@ -795,7 +805,9 @@ func runjob(in *pb.RunJobRequest) error {
 // To calculate Progress of migration process
 func progress(job *flowtype.Job, size int64, wt float64) {
 	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
+	log.Println(job.MigratedCapacity, "this is migrated capacity", size, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", wt)
 	MigratedCapacity := job.MigratedCapacity + float64(size)*(wt/100)
+	log.Println(MigratedCapacity, "new migration capacity")
 	job.MigratedCapacity = math.Round(MigratedCapacity*100) / 100
 	// Progress = Migrated Capacity*100/ Total Capacity
 	job.Progress = int64(job.MigratedCapacity * 100 / float64(job.TotalCapacity))
