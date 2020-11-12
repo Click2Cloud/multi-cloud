@@ -694,7 +694,6 @@ func runjob(in *pb.RunJobRequest) error {
 	//hhhhh
 	// used to transfer capacity(size) of objects
 	capa := make(chan int64)
-	capa <- j.PassedCapacity
 	// concurrent go routines is limited to be simuRoutines
 	th := make(chan int, simuRoutines)
 
@@ -744,6 +743,7 @@ func runjob(in *pb.RunJobRequest) error {
 				//update database
 				j.PassedCount = passedCount
 				j.PassedCapacity = capacity
+				progress(&j, capacity, WT_MOVE)
 				log.Infof("ObjectMigrated:%d,TotalCapacity:%d Progress:%d\n", j.PassedCount, j.TotalCapacity, j.Progress)
 				db.DbAdapter.UpdateJob(&j)
 
