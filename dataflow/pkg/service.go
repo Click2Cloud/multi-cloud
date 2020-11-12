@@ -57,6 +57,7 @@ func (b *dataflowService) ResumeJob(ctx context.Context, in *pb.ResumeJobRequest
 	jb, err := plan.Resume(in.Id, tenantId, userId)
 	if err != nil {
 		log.Info("Resume job err:%d.", err)
+		out.JobId = string(jb.Id)
 		out.Err = err.Error()
 		return nil
 	} else {
