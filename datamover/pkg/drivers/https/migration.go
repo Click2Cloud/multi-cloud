@@ -642,7 +642,6 @@ func runjob(in *pb.RunJobRequest) error {
 	if err != nil {
 		return err
 	}
-
 	var limit int32 = 1000
 	var marker string
 	objs, err := getObjs(ctx, in, marker, limit)
@@ -745,6 +744,7 @@ func runjob(in *pb.RunJobRequest) error {
 				j.PassedCapacity = capacity
 				log.Infof("ObjectMigrated:%d,TotalCapacity:%d Progress:%d\n", j.PassedCount, j.TotalCapacity, j.Progress)
 				db.DbAdapter.UpdateJob(&j)
+
 			}
 		case <-time.After(dur):
 			{
@@ -779,6 +779,7 @@ func runjob(in *pb.RunJobRequest) error {
 		}
 	} else {
 		j.Status = flowtype.JOB_STATUS_SUCCEED
+		j.Progress = 100
 	}
 
 	j.EndTime = time.Now()
