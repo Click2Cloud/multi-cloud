@@ -364,6 +364,9 @@ func (ad *adapter) GetJobDetails(j *Job) error {
 	if job.TimeRequired != 0 {
 		j.TimeRequired = job.TimeRequired
 	}
+	if job.MigratedCapacity != 0 {
+		j.MigratedCapacity = job.MigratedCapacity
+	}
 	if job.TimeRequired == 0 {
 		j.TimeRequired = 0
 	}
