@@ -798,7 +798,7 @@ func runjob(in *pb.RunJobRequest) error {
 // To calculate Progress of migration process
 func progress(job *flowtype.Job, size int64, wt float64) {
 	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
-	log.Println(job.MigratedCapacity, "this is migrated capacity", size, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", wt)
+	log.Println(job.MigratedCapacity, "this is new log for migrated capacity", size, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", wt)
 	MigratedCapacity := job.MigratedCapacity + float64(size)*(wt/100)
 	log.Println(MigratedCapacity, "new migration capacity")
 	job.MigratedCapacity = math.Round(MigratedCapacity*100) / 100
