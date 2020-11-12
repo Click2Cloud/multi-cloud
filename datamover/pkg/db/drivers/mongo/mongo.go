@@ -107,6 +107,11 @@ func (ad *adapter) UpdateJob(job *Job) error {
 	if job.Status != "" {
 		j.Status = job.Status
 	}
+	log.Println(job.MigratedCapacity)
+	if job.MigratedCapacity != 0 {
+		j.MigratedCapacity = job.MigratedCapacity
+		log.Println("after db update ********", j.MigratedCapacity)
+	}
 	if job.Progress != 0 {
 		j.Progress = job.Progress
 	}
