@@ -597,7 +597,21 @@ func (s *s3Service) CopyObject(ctx context.Context, in *pb.CopyObjectRequest, ou
 		log.Errorln("failed to put data. err:", err)
 		return nil
 	}
-	limitedDataReader := io.LimitReader(reader, srcObject.Size)
+	//limitedDataReader := io.LimitReader(reader, srcObject.Size)
+	var finalReader io.Reader
+	finalReader = reader
+	if srcBucket.ServerSideEncryption.SseType == "SSE" {
+		finalReader, _ = utils.WrapAlignedEncryptionReader(reader, 0,
+			srcBucket.ServerSideEncryption.EncryptionKey,
+			srcBucket.ServerSideEncryption.InitilizationVector)
+	} else if srcObject.ServerSideEncryption != nil {
+		if srcObject.ServerSideEncryption.SseType == "AES256" {
+			finalReader, _ = utils.WrapAlignedEncryptionReader(reader, 0,
+				srcObject.ServerSideEncryption.EncryptionKey,
+				srcObject.ServerSideEncryption.InitilizationVector)
+		}
+	}
+	limitedDataReader := io.LimitReader(finalReader, srcObject.Size)
 
 	targetObject := &pb.Object{
 		ObjectKey:  targetObjectName,
@@ -608,6 +622,19 @@ func (s *s3Service) CopyObject(ctx context.Context, in *pb.CopyObjectRequest, ou
 		targetObject.StorageMeta = oldObj.StorageMeta
 		targetObject.ObjectId = oldObj.ObjectId
 	}
+
+	if targetBucket.ServerSideEncryption.SseType == "SSE" {
+
+		var readerErr error
+		limitedDataReader, readerErr = utils.WrapEncryptionReader(io.LimitReader(finalReader, srcObject.Size),
+			targetBucket.ServerSideEncryption.EncryptionKey,
+			targetBucket.ServerSideEncryption.InitilizationVector)
+		if readerErr != nil {
+			log.Errorln("failed to get encrypted reader with err:", readerErr)
+			return readerErr
+		}
+	}
+
 	ctx = context.WithValue(ctx, dscommon.CONTEXT_KEY_SIZE, srcObject.Size)
 	res, err := targetSd.Put(ctx, limitedDataReader, targetObject)
 	if err != nil {

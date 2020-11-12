@@ -45,8 +45,9 @@ func MoveObj(obj *osdss3.Object, targetLoc *LocationInfo, tmout time.Duration) e
 		SrcObjectVersion: obj.VersionId,
 		SrcBucket:        obj.BucketName,
 		TargetLocation:   targetLoc.BakendName,
+		TargetBucket:     targetLoc.BakendName,
 		TargetTier:       targetLoc.Tier,
-		MoveType:         utils.MoveType_ChangeLocation,
+		MoveType:         utils.MoveType_MoveCrossBuckets,
 	}
 	opt := client.WithRequestTimeout(tmout)
 	_, err := s3client.MoveObject(ctx, req, opt)

@@ -20,6 +20,7 @@ import (
 	"github.com/micro/go-plugins/registry/kubernetes/v2"
 	"github.com/micro/go-plugins/registry/mdns/v2"
 	"os"
+	"time"
 
 	//"github.com/micro/go-plugins/registry/kubernetes/v2"
 	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
@@ -51,6 +52,7 @@ func main() {
 	pb.RegisterDataFlowHandler(service.Server(), handler.NewDataFlowService())
 	scheduler.LoadAllPlans()
 	scheduler.LoadLifecycleScheduler()
+	time.Local, _ = time.LoadLocation("UTC")
 	if err := service.Run(); err != nil {
 		log.Info(err)
 	}

@@ -735,15 +735,53 @@ func (s *s3Service) CopyObjPart(ctx context.Context, in *pb.CopyObjPartRequest, 
 		log.Errorln("failed to get data reader. err:", err)
 		return err
 	}
-	limitedDataReader := io.LimitReader(reader, size)
+	//limitedDataReader := io.LimitReader(reader, size)
+	var finalReader io.Reader
+	finalReader = reader
+	if srcBucket.ServerSideEncryption.SseType == "SSE" {
+		finalReader, _ = utils.WrapAlignedEncryptionReader(reader, 0,
+			srcBucket.ServerSideEncryption.EncryptionKey,
+			srcBucket.ServerSideEncryption.InitilizationVector)
+	} else if srcObject.ServerSideEncryption != nil {
+		if srcObject.ServerSideEncryption.SseType == "AES256" {
+			finalReader, _ = utils.WrapAlignedEncryptionReader(reader, 0,
+				srcObject.ServerSideEncryption.EncryptionKey,
+				srcObject.ServerSideEncryption.InitilizationVector)
+		}
+	}
+
+	limitedDataReader := io.LimitReader(finalReader, size)
+
 	md5Writer := md5.New()
-	dataReader := io.TeeReader(limitedDataReader, md5Writer)
+	//dataReader := io.TeeReader(limitedDataReader, md5Writer)
 
 	multipart, err := s.MetaStorage.GetMultipart(targetBucketName, targetObjectName, uploadId)
 	if err != nil {
 		log.Errorln("failed to get multipart. err:", err)
 		return err
 	}
+
+	var dataReader io.Reader
+	// encrypt if needed
+	if targetBucket.ServerSideEncryption.SseType == "SSE" {
+
+		var readerErr error
+		tempReader, readerErr := utils.WrapEncryptionReader(limitedDataReader,
+			targetBucket.ServerSideEncryption.EncryptionKey,
+			targetBucket.ServerSideEncryption.InitilizationVector)
+		if readerErr != nil {
+			log.Errorln("failed to get encrypted reader with err:", readerErr)
+			return readerErr
+		}
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(tempReader)
+		size = int64(buf.Len())
+
+		dataReader = io.TeeReader(io.LimitReader(bytes.NewReader(buf.Bytes()), size), md5Writer)
+	} else {
+		dataReader = io.TeeReader(limitedDataReader, md5Writer)
+	}
+
 	_, err = targetSd.UploadPart(ctx, dataReader, &pb.MultipartUpload{
 		Bucket:   targetBucketName,
 		Key:      targetObjectName,
