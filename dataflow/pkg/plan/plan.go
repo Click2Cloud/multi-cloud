@@ -402,9 +402,9 @@ func Resume(planId, tenantId, userId string) (*Job, error) {
 		return nil, errors.New("Job already finished")
 	}
 
-	if job.Status != JOB_STATUS_HOLD {
-		return job, errors.New("Job can not be resumed")
-	}
+	//if job.Status != JOB_STATUS_HOLD {
+	//	return job, errors.New("Job can not be resumed")
+	//}
 
 	//
 	plan, err := db.DbAdapter.GetPlan(ctx, job.PlanId)

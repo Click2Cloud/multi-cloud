@@ -724,15 +724,8 @@ func runjob(in *pb.RunJobRequest) error {
 		marker = objs[num-1].ObjectKey
 	}
 
-	var capacity, count, passedCount, totalObjs int64 = 0, 0, 0, j.TotalCount
-
-	if j.PassedCount != 0 {
-		passedCount = j.PassedCount
-	}
-	if j.PassedCapacity != 0 {
-		capacity = j.PassedCapacity
-	}
-
+	var capacity, count, passedCount, totalObjs int64 = j.PassedCapacity, j.PassedCount, j.PassedCount, j.TotalCount
+	log.Println(capacity, count, passedCount, totalObjs, "<---------------------------------")
 	tmout := false
 	for {
 		select {
