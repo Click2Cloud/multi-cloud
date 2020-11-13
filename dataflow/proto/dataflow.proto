@@ -23,7 +23,8 @@ message ResumeJobRequest {
 
 message ResumeJobResponse {
 	string err = 1;
-    string jobId = 2;
+    string id = 2;
+    string status = 3;
 }
 
 message ChangeStatusRequest{

@@ -84,4 +84,5 @@ type DBAdapter interface {
 	ListJob(ctx context.Context, limit int, offset int, filter interface{}) ([]model.Job, error)
 	ChangeStatus(jobId string, status string) error
 	UpdateJob(job *model.Job) error
+	GetJobStatus(jobID string) string
 }

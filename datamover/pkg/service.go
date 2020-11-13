@@ -71,8 +71,6 @@ func (b *datamoverService) AbortJob(ctx context.Context, in *pb.AbortJobRequest,
 		return nil
 	}
 	jobstatus := db.DbAdapter.GetJobStatus(in.Id)
-	//jb, err := job.Cancel(actx, in.Id)
-	//log.Logf("Cancel job response from datamover :%d.", jb.Id)
 
 	if jobstatus == model.JOB_STATUS_ABORTED {
 		out.Err = "job already aborted"
