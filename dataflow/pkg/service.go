@@ -82,15 +82,15 @@ func (b *dataflowService) ResumeJob(ctx context.Context, in *pb.ResumeJobRequest
 			return err
 		}
 
-		_, err1 := plan.Resume(in.Id, tenantId, userId)
+		jb, err1 := plan.Resume(in.Id, tenantId, userId)
 		if err1 == nil {
 			out.Err = "Job is resumed"
 			out.Id = in.Id
-			out.Status = jobstatus
+			out.Status = jb.Status
 		} else {
 			out.Err = "err while resuming"
 			out.Id = in.Id
-			out.Status = jobstatus
+			out.Status = jb.Status
 		}
 		return nil
 	}
