@@ -450,5 +450,5 @@ func Resume(planId, tenantId, userId string) (*Job, error) {
 
 	go sendJob(&req)
 
-	return job, errors.New("resumed")
+	return job, nil
 }
