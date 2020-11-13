@@ -108,10 +108,8 @@ func HandleMsg(msgData []byte) error {
 
 func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th chan int, req *pb.RunJobRequest,
 	job *flowtype.Job) {
-	log.Println(job.Id, "this is job ID ############################################################### IN Do migrate")
 	status := jobstate[job.Id.Hex()]
 
-	log.Println(job.Id, status, "this is status  ############################################################### IN Do migrate")
 	if status == ABORTED {
 		if job.Status != ABORTED {
 			job.EndTime = time.Now()
@@ -230,9 +228,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	if obj.Size%PART_SIZE != 0 {
 		partCount++
 	}
-	log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
 	status := jobstate[job.Id.Hex()]
-	log.Println(status, "this is status ############################################################### IN MultipartCopyObj")
 	if status == ABORTED {
 		if job.Status != ABORTED {
 			job.EndTime = time.Now()
@@ -280,9 +276,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		if i+1 == partCount {
 			currPartSize = obj.Size - offset
 		}
-		log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
 		status1 := jobstate[job.Id.Hex()]
-		log.Println(status1, "this is status ############################################################### IN MultipartCopyObj")
 		if status1 == ABORTED {
 			err = errors.New(ABORTED)
 			break
@@ -455,11 +449,9 @@ func deleteObj(ctx context.Context, obj *osdss3.Object) error {
 func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan int, req *pb.RunJobRequest, job *flowtype.Job) {
 	log.Infof("Move obj[%s] from bucket[%s] to bucket[%s].\n",
 		obj.ObjectKey, job.SourceLocation, job.DestLocation)
-	log.Println(job.Id, "this is job ID ############################################################### IN migrate")
 	succeed := true
 	needMove := true
 	status := jobstate[job.Id.Hex()]
-	log.Println(status, "this is status ############################################################### IN migrate")
 	if status == ABORTED {
 		if job.Status != ABORTED {
 			job.EndTime = time.Now()
@@ -647,9 +639,8 @@ func runjob(in *pb.RunJobRequest) error {
 	objs, err := getObjs(ctx, in, marker, limit)
 
 	if len(j.ObjList) == 0 {
-		log.Println(j.ObjList, "_*********************$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+
 		for k := range objs {
-			log.Println("inside looop-------------->>>>>>>>", k, "_*********************$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 			j.ObjList = append(j.ObjList, model.ObjDet{
 				ObjKey:   objs[k].ObjectKey,
 				UploadId: "",
@@ -658,11 +649,8 @@ func runjob(in *pb.RunJobRequest) error {
 			log.Println(j.ObjList, "objects ___________")
 			updateJob(&j)
 		}
-	} else {
-		log.Println("**********************job has object list*********************************")
-		log.Println(j.ObjList, "<-------------------------------------------------------")
-
 	}
+
 	totalObj := len(objs)
 	if totalObj == 0 {
 		log.Printf("[WARN] Bucket is empty.")
@@ -689,7 +677,7 @@ func runjob(in *pb.RunJobRequest) error {
 		updateJob(&j)
 		return err
 	}
-	//objToMig:= j.TotalCount-j.PassedCount
+
 	updateJob(&j)
 	//hhhhh
 	// used to transfer capacity(size) of objects
@@ -699,7 +687,6 @@ func runjob(in *pb.RunJobRequest) error {
 
 	for {
 
-		log.Println(in.Id, jobstate[in.Id], "this is status  ############################################################### IN run job")
 		//objs, err := getObjs(ctx, in, marker, limit)
 		if err != nil {
 			//update database
