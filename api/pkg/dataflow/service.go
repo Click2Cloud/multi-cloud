@@ -16,9 +16,6 @@ package dataflow
 
 import (
 	"encoding/json"
-	"io/ioutil"
-	"net/http"
-
 	"github.com/emicklei/go-restful"
 	"github.com/micro/go-micro/v2/client"
 	"github.com/opensds/multi-cloud/api/pkg/common"
@@ -28,6 +25,8 @@ import (
 	"github.com/opensds/multi-cloud/dataflow/proto"
 	"github.com/opensds/multi-cloud/s3/proto"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
+	"net/http"
 )
 
 const (
@@ -419,6 +418,33 @@ func (s *APIService) GetJob(request *restful.Request, response *restful.Response
 	log.Info("Get job details successfully.")
 	response.WriteEntity(res)
 }
+func (s *APIService) ChangeMigrationStatus(request *restful.Request, response *restful.Response) {
+	status := dataflow.ChangeStatus{}
+	err := request.ReadEntity(&status)
+	if err != nil {
+		response.WriteError(http.StatusInternalServerError, err)
+		log.Infof("read request body failed, err:%v.\n", err)
+		return
+	}
+
+	//For debug --begin
+	jsons, errs := json.Marshal(status)
+	if errs != nil {
+		log.Errorf(errs.Error())
+	} else {
+		log.Infof("Req body: %s.\n", jsons)
+	}
+	//For debug --end
+
+	ctx := common.InitCtxWithAuthInfo(request)
+	resp, err := s.dataflowClient.ChangeStatus(ctx, &dataflow.ChangeStatusRequest{ChangeStatus: &status})
+	if err != nil {
+		response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+
+	response.WriteEntity(resp)
+}
 
 func (s *APIService) ListJob(request *restful.Request, response *restful.Response) {
 	if !policy.Authorize(request, response, "job:list") {
@@ -474,5 +500,23 @@ func (s *APIService) ListJob(request *restful.Request, response *restful.Respons
 	//For debug -- end
 
 	log.Info("List jobs successfully.")
+	response.WriteEntity(res)
+}
+
+func (s *APIService) ResumeJob(request *restful.Request, response *restful.Response) {
+	if !policy.Authorize(request, response, "plan:run") {
+		return
+	}
+
+	id := request.PathParameter("id")
+	log.Info("Received request for Resume Job[id=%s] details.\n", id)
+
+	ctx := common.InitCtxWithAuthInfo(request)
+	res, err := s.dataflowClient.ResumeJob(ctx, &dataflow.ResumeJobRequest{Id: id})
+	if err != nil {
+		response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+
 	response.WriteEntity(res)
 }

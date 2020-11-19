@@ -19,6 +19,7 @@ import (
 	"github.com/micro/go-micro/v2/registry"
 	"github.com/micro/go-plugins/registry/kubernetes/v2"
 	"github.com/micro/go-plugins/registry/mdns/v2"
+	pb "github.com/opensds/multi-cloud/datamover/proto"
 	"os"
 	"time"
 
@@ -47,7 +48,7 @@ func main() {
 	service.Init()
 	time.Local, _ = time.LoadLocation("UTC")
 	datamover.InitDatamoverService()
-	//pb.RegisterDatamoverHandler(service.Server(), handler.NewDatamoverService())
+	pb.RegisterDatamoverHandler(service.Server(), datamover.NewDatamoverService())
 	if err := service.Run(); err != nil {
 		fmt.Println(err)
 	}
