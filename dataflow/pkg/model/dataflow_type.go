@@ -16,6 +16,7 @@ package model
 
 import (
 	"errors"
+	osdss3 "github.com/opensds/multi-cloud/s3/proto"
 	"time"
 
 	"github.com/globalsign/mgo"
@@ -37,10 +38,14 @@ var (
 )
 
 var (
-	JOB_STATUS_PENDING = "pending"
-	JOB_STATUS_RUNNING = "running"
-	JOB_STATUS_SUCCEED = "succeed"
-	JOB_STATUS_FAILED  = "failed"
+	JOB_STATUS_PENDING   = "pending"
+	JOB_STATUS_RUNNING   = "running"
+	JOB_STATUS_SUCCEED   = "succeed"
+	JOB_STATUS_FAILED    = "failed"
+	JOB_STATUS_ABORTED   = "aborted"
+	JOB_STATUS_CANCELLED = "cancelled"
+	JOB_STATUS_HOLD      = "paused"
+	JOB_STATUS_RESUME    = "resuming"
 )
 
 var (
@@ -61,6 +66,7 @@ var (
 	ERR_RUN_PLAN_BUSY       = errors.New("is scheduling")   //Plan is being scheduled
 	ERR_JOB_NOT_EXIST       = errors.New("job not exist")
 	ERR_PLAN_NOT_IN_TRIGGER = errors.New("specified plan is not in trigger")
+	ERR_JOB_COMPLETED       = errors.New("job already finished")
 )
 
 var (
@@ -127,6 +133,17 @@ type Plan struct {
 	TenantId      string    `json:"tenantId" bson:"tenantId"`
 	UserId        string    `json:"userId" bson:"userId"`
 }
+type ObjDet struct {
+	ObjKey   string                 `json:"objKey" bson:"objKey"`
+	UploadId string                 `json:"uploadId" bson:"uploadId"`
+	PartNo   int64                  `json:"partNo" bson:"partNo"`
+	Migrated bool                   `json:"migrated" bson:"migrated"`
+	PartTag  []*osdss3.CompletePart `json:"partTag" bson:"partTag"`
+}
+type PartDet struct {
+	Etag string `json:"etag" bson:"etag"`
+	No   int64  `json:"no" bson:"no"`
+}
 
 const (
 	TriggerTypeManual = "manual"
@@ -155,6 +172,11 @@ type Job struct {
 	TenantId       string    `json:"tenantId" bson:"tenantId"`
 	UserId         string    `json:"userId" bson:"userId"`
 	Progress       int64     `json:"progress" bson:"progress"`
+	Avg            float64   `json:""avg_speed" bson:"avg_speed"`
+	TimeRequired   int64     `json:"timeRequired" bson:"timeRequired"`
+	Msg            string    `json:"msg" bson:"msg"`
+	ObjList        []ObjDet  `json:"objList" bson:"objList"`
+	TimesResumed   int64     `json:"timesResumed" bson:"timesResumed"`
 }
 
 type Backend struct {
