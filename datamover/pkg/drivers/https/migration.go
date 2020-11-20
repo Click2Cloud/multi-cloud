@@ -796,7 +796,8 @@ func progress(job *flowtype.Job, size int64, wt float64) {
 	log.Println(MigratedCapacity, "new migration capacity")
 	job.MigratedCapacity = math.Round(MigratedCapacity*100) / 100
 	// Progress = Migrated Capacity*100/ Total Capacity
-	job.Progress = int64(job.MigratedCapacity * 100 / float64(job.TotalCapacity))
+	//job.Progress = int64(job.MigratedCapacity * 100 / float64(job.TotalCapacity))
+	job.Progress = int64((job.PassedCapacity / job.TotalCapacity) * 100)
 	log.Debugf("Progress %d, MigratedCapacity %d, TotalCapacity %d\n", job.Progress, job.MigratedCapacity, job.TotalCapacity)
 	db.DbAdapter.UpdateJob(job)
 }
