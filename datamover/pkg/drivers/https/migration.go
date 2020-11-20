@@ -713,7 +713,7 @@ func runjob(in *pb.RunJobRequest) error {
 		marker = objs[num-1].ObjectKey
 	}
 
-	var capacity, count, passedCount, totalObjs int64 = j.PassedCapacity, j.PassedCount, j.PassedCount, j.TotalCount
+	var totalcapacity, capacity, count, passedCount, totalObjs int64 = j.TotalCapacity, j.PassedCapacity, j.PassedCount, j.PassedCount, j.TotalCount
 	log.Println(capacity, count, passedCount, totalObjs, "<---------------------------------")
 	tmout := false
 	for {
@@ -733,7 +733,7 @@ func runjob(in *pb.RunJobRequest) error {
 				//update database
 				j.PassedCount = passedCount
 				j.PassedCapacity = capacity
-				j.Progress = (j.PassedCapacity / j.TotalCapacity) * 100
+				j.Progress = (capacity / totalcapacity) * 100
 				log.Infof("ObjectMigrated:%d,TotalCapacity:%d Progress:%d\n", j.PassedCount, j.TotalCapacity, j.Progress)
 				db.DbAdapter.UpdateJob(&j)
 
