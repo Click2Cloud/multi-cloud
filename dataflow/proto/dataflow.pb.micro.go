@@ -48,6 +48,7 @@ type DataFlowService interface {
 	ListJob(ctx context.Context, in *ListJobRequest, opts ...client.CallOption) (*ListJobResponse, error)
 	RunPlan(ctx context.Context, in *RunPlanRequest, opts ...client.CallOption) (*RunPlanResponse, error)
 	ChangeStatus(ctx context.Context, in *ChangeStatusRequest, opts ...client.CallOption) (*ChangeStatusResponse, error)
+	ResumeJob(ctx context.Context, in *ResumeJobRequest, opts ...client.CallOption) (*ResumeJobResponse, error)
 }
 
 type dataFlowService struct {
@@ -202,6 +203,16 @@ func (c *dataFlowService) ChangeStatus(ctx context.Context, in *ChangeStatusRequ
 	return out, nil
 }
 
+func (c *dataFlowService) ResumeJob(ctx context.Context, in *ResumeJobRequest, opts ...client.CallOption) (*ResumeJobResponse, error) {
+	req := c.c.NewRequest(c.name, "DataFlow.ResumeJob", in)
+	out := new(ResumeJobResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for DataFlow service
 
 type DataFlowHandler interface {
@@ -219,6 +230,7 @@ type DataFlowHandler interface {
 	ListJob(context.Context, *ListJobRequest, *ListJobResponse) error
 	RunPlan(context.Context, *RunPlanRequest, *RunPlanResponse) error
 	ChangeStatus(context.Context, *ChangeStatusRequest, *ChangeStatusResponse) error
+	ResumeJob(context.Context, *ResumeJobRequest, *ResumeJobResponse) error
 }
 
 func RegisterDataFlowHandler(s server.Server, hdlr DataFlowHandler, opts ...server.HandlerOption) error {
@@ -237,6 +249,7 @@ func RegisterDataFlowHandler(s server.Server, hdlr DataFlowHandler, opts ...serv
 		ListJob(ctx context.Context, in *ListJobRequest, out *ListJobResponse) error
 		RunPlan(ctx context.Context, in *RunPlanRequest, out *RunPlanResponse) error
 		ChangeStatus(ctx context.Context, in *ChangeStatusRequest, out *ChangeStatusResponse) error
+		ResumeJob(ctx context.Context, in *ResumeJobRequest, out *ResumeJobResponse) error
 	}
 	type DataFlow struct {
 		dataFlow
@@ -303,4 +316,8 @@ func (h *dataFlowHandler) RunPlan(ctx context.Context, in *RunPlanRequest, out *
 
 func (h *dataFlowHandler) ChangeStatus(ctx context.Context, in *ChangeStatusRequest, out *ChangeStatusResponse) error {
 	return h.DataFlowHandler.ChangeStatus(ctx, in, out)
+}
+
+func (h *dataFlowHandler) ResumeJob(ctx context.Context, in *ResumeJobRequest, out *ResumeJobResponse) error {
+	return h.DataFlowHandler.ResumeJob(ctx, in, out)
 }

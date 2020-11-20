@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 	"time"
@@ -27,6 +28,7 @@ import (
 	"github.com/micro/go-micro/v2/metadata"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 	"github.com/opensds/multi-cloud/backend/proto"
+	"github.com/opensds/multi-cloud/dataflow/pkg/model"
 	flowtype "github.com/opensds/multi-cloud/dataflow/pkg/model"
 	"github.com/opensds/multi-cloud/datamover/pkg/db"
 	. "github.com/opensds/multi-cloud/datamover/pkg/utils"
@@ -87,12 +89,16 @@ func HandleMsg(msgData []byte) error {
 
 	//Check the status of job, and run it if needed
 	status := db.DbAdapter.GetJobStatus(job.Id)
-	if status == ABORTED {
-		return nil
-	}
+
 	if status != flowtype.JOB_STATUS_PENDING {
-		log.Infof("job[id#%s] is not in %s status.\n", job.Id, flowtype.JOB_STATUS_PENDING)
-		return nil //No need to consume this message again
+		if status == flowtype.JOB_STATUS_RESUME {
+			log.Print("***********************RESUMING***********************")
+
+			log.Printf("job[id#%s] is %s.\n", job.Id, flowtype.JOB_STATUS_RESUME)
+		} else {
+			log.Printf("job[id#%s] is not in %s status.\n", job.Id, flowtype.JOB_STATUS_PENDING)
+			return nil //No need to consume this message again}
+		}
 	}
 
 	log.Infof("HandleMsg:job=%+v\n", job)
@@ -102,10 +108,8 @@ func HandleMsg(msgData []byte) error {
 
 func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th chan int, req *pb.RunJobRequest,
 	job *flowtype.Job) {
-	log.Println(job.Id, "this is job ID ############################################################### IN Do migrate")
 	status := jobstate[job.Id.Hex()]
 
-	log.Println(job.Id, status, "this is status  ############################################################### IN Do migrate")
 	if status == ABORTED {
 		if job.Status != ABORTED {
 			job.EndTime = time.Now()
@@ -114,27 +118,63 @@ func doMigrate(ctx context.Context, objs []*osdss3.Object, capa chan int64, th c
 		}
 		return
 	}
+	if status == PAUSED {
+		if job.Status != PAUSED {
+			job.TimeRequired = 0
+			job.EndTime = time.Now() //TODO Need to check
+			job.Msg = "Migration Paused"
+			job.Status = PAUSED
+			db.DbAdapter.UpdateJob(job)
+		}
+		return
+	}
 	for i := 0; i < len(objs); i++ {
+		db.DbAdapter.UpdateJob(job)
+		if jobstate[job.Id.Hex()] == ABORTED {
+			if job.Status != flowtype.JOB_STATUS_ABORTED {
+				job.TimeRequired = 0
+				job.EndTime = time.Now()
+				job.Msg = "Migration Aborted"
+				job.Status = flowtype.JOB_STATUS_ABORTED
+				db.DbAdapter.UpdateJob(job)
+			}
+			break
+		}
+		if jobstate[job.Id.Hex()] == PAUSED {
+			if job.Status != flowtype.JOB_STATUS_HOLD {
+				job.TimeRequired = 0
+				job.EndTime = time.Now() //TODO Need to check
+				job.Msg = "Migration Paused"
+				job.Status = flowtype.JOB_STATUS_HOLD
+				db.DbAdapter.UpdateJob(job)
+			}
+			break
+		}
 		if objs[i].Tier == s3utils.Tier999 {
 			// archived object cannot be moved currently
 			log.Warnf("Object(key:%s) is archived, cannot be migrated.\n", objs[i].ObjectKey)
 			continue
 		}
 		log.Infof("************Begin to move obj(key:%s)\n", objs[i].ObjectKey)
-		status1 := jobstate[job.Id.Hex()]
-		log.Println(job.Id, status1, "this is status  ############################################################### IN Do migrate")
 		//Create one routine
-		if status1 != flowtype.JOB_STATUS_ABORTED {
+		var isMigrate = false
+		if job.TimesResumed > 0 {
+			isMigrate = CheckStatus(job, objs[i].ObjectKey)
+		}
+		if isMigrate == false {
 			go migrate(ctx, objs[i], capa, th, req, job)
 			th <- 1
 			log.Infof("doMigrate: produce 1 routine, len(th):%d.\n", len(th))
-		} else if status1 == ABORTED {
-			job.EndTime = time.Now()
-			job.Status = ABORTED
-			db.DbAdapter.UpdateJob(job)
-			break
 		}
+		if jobstate[job.Id.Hex()] == ABORTED && job.Status != flowtype.JOB_STATUS_ABORTED {
+			db.DbAdapter.UpdateJob(job)
 
+		}
+		if jobstate[job.Id.Hex()] == PAUSED && job.Status != flowtype.JOB_STATUS_HOLD {
+
+			db.DbAdapter.UpdateJob(job)
+
+		}
 	}
 }
 
@@ -149,6 +189,16 @@ func CopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, jo
 		if job.Status != ABORTED {
 			job.Status = ABORTED
 			job.EndTime = time.Now()
+			db.DbAdapter.UpdateJob(job)
+		}
+		return errors.New(job.Status)
+	}
+	if status == PAUSED {
+		if job.Status != PAUSED {
+			job.TimeRequired = 0
+			job.EndTime = time.Now() //TODO Need to check
+			job.Msg = "Migration Paused"
+			job.Status = PAUSED
 			db.DbAdapter.UpdateJob(job)
 		}
 		return errors.New(job.Status)
@@ -173,18 +223,28 @@ func CopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, jo
 }
 
 func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, job *flowtype.Job) error {
+	if job == nil || job.Id.Hex() == "" {
+		return errors.New("Job cannot be nil")
+	}
 	log.Debugf("obj.Size=%d, PART_SIZE=%d\n", obj.Size, PART_SIZE)
 	partCount := int64(obj.Size / PART_SIZE)
 	if obj.Size%PART_SIZE != 0 {
 		partCount++
 	}
-	log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
 	status := jobstate[job.Id.Hex()]
-	log.Println(status, "this is status ############################################################### IN MultipartCopyObj")
 	if status == ABORTED {
 		if job.Status != ABORTED {
 			job.EndTime = time.Now()
 			job.Status = ABORTED
+			job.EndTime = time.Now()
+			db.DbAdapter.UpdateJob(job)
+		}
+		return errors.New(job.Status)
+	}
+	if status == PAUSED {
+		if job.Status != PAUSED {
+			job.EndTime = time.Now()
+			job.Status = PAUSED
 			job.EndTime = time.Now()
 			db.DbAdapter.UpdateJob(job)
 		}
@@ -198,22 +258,38 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	var uploadId string
 	var initSucceed bool = false
 	var completeParts []*osdss3.CompletePart
+	var partNo int64 = 1
+	var resMultipart = false
 	currPartSize := PART_SIZE
-	for i = 0; i < partCount; i++ {
+	for m := range job.ObjList {
+		if job.ObjList[m].ObjKey == obj.ObjectKey && job.ObjList[m].PartNo != 0 {
+			partNo = job.ObjList[m].PartNo
+			uploadId = job.ObjList[m].UploadId
+			log.Printf("[INFO] MIGRATION RESUMING objKey:%s \n", obj.ObjectKey)
+			log.Print("GOT PART NO for ", job.ObjList[m].ObjKey, job.ObjList[m].UploadId, job.ObjList[m])
+			resMultipart = true
+			break
+		}
+	}
+	for i = partNo - 1; i < partCount; i++ {
+
 		partNumber := i + 1
+
 		offset := int64(i) * PART_SIZE
 		if i+1 == partCount {
 			currPartSize = obj.Size - offset
 		}
-		log.Println(job.Id, "this is job ID ############################################################### IN MultipartCopyObj")
 		status1 := jobstate[job.Id.Hex()]
-		log.Println(status1, "this is status ############################################################### IN MultipartCopyObj")
 		if status1 == ABORTED {
 			err = errors.New(ABORTED)
 			break
 		}
+		if status1 == PAUSED {
+			err = nil
+			break
+		}
 
-		if partNumber == 1 {
+		if partNumber == 1 || resMultipart == true {
 			// init upload
 			rsp, err := s3client.InitMultipartUpload(ctx, &osdss3.InitMultiPartRequest{
 				BucketName: destLoca.BucketName,
@@ -237,6 +313,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			TargetBucket: destLoca.BucketName, TargetObject: obj.ObjectKey, PartID: partNumber,
 			UploadID: uploadId, ReadOffset: offset, ReadLength: currPartSize, TargetLocation: destLoca.BakendName,
 		}
+
 		var rsp *osdss3.CopyObjPartResponse
 		try := 0
 		tmoutSec := currPartSize / MiniSpeed
@@ -246,6 +323,12 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
 			if status2 != ABORTED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
+				completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
+				completeParts = append(completeParts, completePart)
+				//tempArr = append(tempArr, model.PartDet{
+				//	Etag: rsp.Etag,
+				//	No:   partNumber,
+				//})
 
 			} else if status2 == ABORTED {
 				if job.Status != ABORTED {
@@ -255,8 +338,14 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 					db.DbAdapter.UpdateJob(job)
 				}
 				break
-				return errors.New(job.Status)
-
+			} else if status2 == PAUSED {
+				if job.Status != PAUSED {
+					job.EndTime = time.Now()
+					job.Status = PAUSED
+					job.EndTime = time.Now()
+					db.DbAdapter.UpdateJob(job)
+				}
+				break
 			}
 
 			if err == nil {
@@ -275,17 +364,44 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 
 		log.Debugf("copy part[obj=%s, uploadId=%s, ReadOffset=%d, ReadLength=%d] succeed\n", obj.ObjectKey,
 			uploadId, offset, currPartSize)
-		completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
-		completeParts = append(completeParts, completePart)
+		log.Println(rsp, "  Etag  ", rsp.Etag)
 
 		// update job progress
 		if job != nil {
 			log.Debugln("update job")
 			progress(job, currPartSize, WT_MOVE)
 		}
+		resMultipart = false
+	}
+	for j := range job.ObjList {
+		//logger.Printf("job update Inside FOR LOOP objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
+		if job.ObjList[j].ObjKey == obj.ObjectKey {
+			log.Printf("job update OBJECT IDENTIFIED objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
+			job.ObjList[j].UploadId = uploadId
+			job.ObjList[j].PartNo = partNo
+			for m := range completeParts {
+				if len(job.ObjList[j].PartTag) == int(completeParts[m].PartNumber)-1 {
+					job.ObjList[j].PartTag = append(job.ObjList[j].PartTag, completeParts[m])
+				}
+			}
+			completeParts = job.ObjList[j].PartTag
+			log.Print("UPDATE STATUS FOR M", job.ObjList[j].ObjKey, job.ObjList[j].Migrated)
+			db.DbAdapter.UpdateJob(job)
+			break
+		}
+	}
+	if jobstate[job.Id.Hex()] == PAUSED && i != partCount {
+		job.TimeRequired = 0
+		job.Msg = "Migration Paused"
+		job.Status = flowtype.JOB_STATUS_HOLD
+		db.DbAdapter.UpdateJob(job)
+		log.Printf("JOB PAUSED RETURNING POINT-9 objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
+		return errors.New(job.Msg)
 	}
 
-	if err == nil {
+	StatusCheck := jobstate[job.Id.Hex()]
+
+	if err == nil && StatusCheck != PAUSED {
 		// copy parts succeed, need to complete it
 		completeReq := &osdss3.CompleteMultipartRequest{BucketName: destLoca.BucketName, ObjectKey: obj.ObjectKey,
 			UploadId: uploadId, CompleteParts: completeParts, SourceVersionID: obj.VersionId}
@@ -299,7 +415,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		}
 	}
 
-	if err != nil {
+	if err != nil && StatusCheck != PAUSED {
 		if initSucceed == true {
 			log.Debugf("abort multipart copy, bucket:%s, object:%s, uploadid:%s\n", destLoca.BucketName, obj.ObjectKey, uploadId)
 			_, ierr := s3client.AbortMultipartUpload(ctx, &osdss3.AbortMultipartRequest{BucketName: destLoca.BucketName,
@@ -336,10 +452,9 @@ func deleteObj(ctx context.Context, obj *osdss3.Object) error {
 func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan int, req *pb.RunJobRequest, job *flowtype.Job) {
 	log.Infof("Move obj[%s] from bucket[%s] to bucket[%s].\n",
 		obj.ObjectKey, job.SourceLocation, job.DestLocation)
-	log.Println(job.Id, "this is job ID ############################################################### IN migrate")
 	succeed := true
+	needMove := true
 	status := jobstate[job.Id.Hex()]
-	log.Println(status, "this is status ############################################################### IN migrate")
 	if status == ABORTED {
 		if job.Status != ABORTED {
 			job.EndTime = time.Now()
@@ -347,19 +462,53 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 			db.DbAdapter.UpdateJob(job)
 		}
 	}
-	// copy object
-	var err error
-	PART_SIZE = GetMultipartSize()
-	destLoc := &LocationInfo{BucketName: req.DestConn.BucketName, Tier: obj.Tier}
-	if obj.Size <= PART_SIZE {
-		err = CopyObj(ctx, obj, destLoc, job)
-	} else {
-		err = MultipartCopyObj(ctx, obj, destLoc, job)
+	if status == PAUSED {
+		if job.Status != PAUSED {
+			job.TimeRequired = 0
+			job.EndTime = time.Now() //TODO Need to check
+			job.Msg = "Migration Paused"
+			job.Status = PAUSED
+			db.DbAdapter.UpdateJob(job)
+		}
 	}
+	if needMove {
+		PART_SIZE = GetMultipartSize()
+		db.DbAdapter.UpdateJob(job)
+		if jobstate[job.Id.Hex()] == ABORTED {
+			if job.Status != flowtype.JOB_STATUS_ABORTED {
+				job.TimeRequired = 0
+				job.EndTime = time.Now()
+				job.Msg = "Migration Aborted"
+				job.Status = flowtype.JOB_STATUS_ABORTED
+				db.DbAdapter.UpdateJob(job)
+			}
+		}
+		if jobstate[job.Id.Hex()] == PAUSED {
+			db.DbAdapter.UpdateJob(job)
+			if job.Status != flowtype.JOB_STATUS_HOLD {
+				job.TimeRequired = 0
+				job.EndTime = time.Now() //TODO Need to check
+				job.Msg = "Migration Paused"
+				job.Status = flowtype.JOB_STATUS_HOLD
+				db.DbAdapter.UpdateJob(job)
+			}
 
-	if err != nil {
-		succeed = false
+		}
+		var err error
+
+		destLoc := &LocationInfo{BucketName: req.DestConn.BucketName, Tier: obj.Tier}
+		if obj.Size <= PART_SIZE {
+			err = CopyObj(ctx, obj, destLoc, job)
+		} else {
+			err = MultipartCopyObj(ctx, obj, destLoc, job)
+		}
+
+		if err != nil {
+			succeed = false
+		}
+
 	}
+	// copy object
 
 	if succeed && !req.RemainSource {
 		deleteObj(ctx, obj)
@@ -367,24 +516,60 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 	}
 
 	if succeed {
+		for i := range job.ObjList {
+			if job.ObjList[i].ObjKey == obj.ObjectKey {
+				job.ObjList[i].Migrated = true
+				log.Print("UPDATE STATUS FOR %s %s %s", job.ObjList[i].ObjKey, job.ObjList[i].Migrated)
+				break
+			}
+		}
 		//If migrate success, update capacity
 		log.Infof("  migrate object[key=%s,versionid=%s] succeed.", obj.ObjectKey, obj.VersionId)
+		t := <-th
+		log.Printf("[INFO] migrate: consume %d routine, alen(th)=%d\n", t, len(th))
+		log.Printf("[INFO] CAPACITY  bcapa(capa)=%d\n", len(capa))
 		capa <- obj.Size
+		log.Printf("[INFO] CAPACITY  Acapa(capa)=%d\n", len(capa))
 		if job.Type == "migration" {
 			progress(job, obj.Size, WT_DELETE)
 		}
 	} else {
-		log.Infof("  migrate object[key=%s,versionid=%s] failed.", obj.ObjectKey, obj.VersionId)
-		capa <- -1
+		var t int
+		if job.Status != flowtype.JOB_STATUS_ABORTED && job.Status != flowtype.JOB_STATUS_HOLD {
+			log.Printf("[ERROR] migrate object[%s] failed.", obj.ObjectKey)
+			t = <-th
+			capa <- -1
+		} else if job.Status == flowtype.JOB_STATUS_HOLD {
+			log.Printf("[INFO] migrate object[%s] paused.", obj.ObjectKey)
+
+			log.Printf("[INFO] PAUSED:  object[%s] , len(th)=%d\n", obj.ObjectKey, len(th))
+			t = <-th
+			capa <- -1
+			log.Printf("[INFO] migrate: consume  alen(th)=%d\n", len(th))
+
+		} else {
+			log.Printf("[INFO] migrate object[%s] aborted.", obj.ObjectKey)
+
+			log.Printf("[INFO] migrate: consume  blen(th)=%d\n", len(th))
+			t = <-th
+			capa <- -1
+		}
+		log.Printf("[ERROR] CAPACITY  fAILED bcapa=%d\n", len(capa))
+
+		log.Printf("[ERROR] CAPACITY FAILED Acapa=%d\n", len(capa))
+
+		log.Printf("[ERROR] FAILED/PAUSED/ABORT: consume %d routine, len(th)=%d\n", t, len(th))
 	}
 
-	t := <-th
-	log.Infof("  migrate: consume %d routine, len(th)=%d\n", t, len(th))
+	//log.Printf("[INFO] FULL MIGR
+
 }
 
 func updateJob(j *flowtype.Job) {
+	log.Println(j)
 	for i := 1; i <= 3; i++ {
 		err := db.DbAdapter.UpdateJob(j)
+		log.Println(i)
 		if err == nil {
 			break
 		}
@@ -424,7 +609,7 @@ func initJob(ctx context.Context, in *pb.RunJobRequest, j *flowtype.Job) error {
 func runjob(in *pb.RunJobRequest) error {
 	log.Infoln("Runjob is called in datamover service.")
 	log.Infof("Request: %+v\n", in)
-	log.Println(in.Id, "this is job ID ############################################################### IN runjob")
+	log.Println(in.Id, "this is job ID ****************IN runjob")
 	// set context tiemout
 	ctx := metadata.NewContext(context.Background(), map[string]string{
 		common.CTX_KEY_USER_ID:   in.UserId,
@@ -439,23 +624,73 @@ func runjob(in *pb.RunJobRequest) error {
 
 	// init job
 	j := flowtype.Job{Id: bson.ObjectIdHex(in.Id)}
+	db.DbAdapter.GetJobDetails(&j)
 	j.StartTime = time.Now()
+	if j.Status == flowtype.JOB_STATUS_PENDING {
+		j.TimesResumed = 0
+	} else {
+		log.Printf("[INFO] Migration Resumed")
+		j.TimesResumed++
+	}
 	j.Status = flowtype.JOB_STATUS_RUNNING
 	err := initJob(ctx, in, &j)
 	if err != nil {
 		return err
 	}
+	var limit int32 = 1000
+	var marker string
+	objs, err := getObjs(ctx, in, marker, limit)
 
+	if len(j.ObjList) == 0 {
+
+		for k := range objs {
+			j.ObjList = append(j.ObjList, model.ObjDet{
+				ObjKey:   objs[k].ObjectKey,
+				UploadId: "",
+				Migrated: false,
+			})
+			log.Println(j.ObjList, "objects ___________")
+			updateJob(&j)
+		}
+	}
+
+	totalObj := len(objs)
+	if totalObj == 0 {
+		log.Printf("[WARN] Bucket is empty.")
+		j.Msg = "Bucket is empty"
+		j.TimeRequired = int64(0)
+	}
+	var totalcount int64 = 0
+	var totalcap int64 = 0
+	for i := 0; i < totalObj; i++ {
+		totalcount++
+		totalcap += objs[i].Size
+	}
+	if j.TotalCount != totalcount {
+		j.TotalCount = totalcount
+	}
+	if j.TotalCapacity != totalcap {
+		j.TotalCapacity = totalcap
+	}
+	if err != nil || j.TotalCount == 0 || j.TotalCapacity == 0 {
+		log.Printf("FAILED STATUS CHANGED-3")
+		j.Status = flowtype.JOB_STATUS_FAILED
+		j.EndTime = time.Now()
+		j.TimeRequired = int64(0)
+		updateJob(&j)
+		return err
+	}
+
+	updateJob(&j)
+	//hhhhh
 	// used to transfer capacity(size) of objects
 	capa := make(chan int64)
 	// concurrent go routines is limited to be simuRoutines
 	th := make(chan int, simuRoutines)
-	var limit int32 = 1000
-	var marker string
+
 	for {
 
-		log.Println(in.Id, jobstate[in.Id], "this is status  ############################################################### IN run job")
-		objs, err := getObjs(ctx, in, marker, limit)
+		//objs, err := getObjs(ctx, in, marker, limit)
 		if err != nil {
 			//update database
 			j.Status = flowtype.JOB_STATUS_FAILED
@@ -470,15 +705,7 @@ func runjob(in *pb.RunJobRequest) error {
 		}
 
 		//Do migration for each object.
-		if jobstate[in.Id] != ABORTED {
-			go doMigrate(ctx, objs, capa, th, in, &j)
-		} else if jobstate[in.Id] == ABORTED {
-			j.Status = ABORTED
-			j.EndTime = time.Now()
-			db.DbAdapter.UpdateJob(&j)
-			return errors.New("ABORTED")
-			break
-		}
+		go doMigrate(ctx, objs, capa, th, in, &j)
 
 		if num < int(limit) {
 			break
@@ -486,23 +713,30 @@ func runjob(in *pb.RunJobRequest) error {
 		marker = objs[num-1].ObjectKey
 	}
 
-	var capacity, count, passedCount, totalObjs int64 = 0, 0, 0, j.TotalCount
+	var capacity, count, passedCount, totalObjs int64 = j.PassedCapacity, j.PassedCount, j.PassedCount, j.TotalCount
+	log.Println(capacity, count, passedCount, totalObjs, "<---------------------------------")
 	tmout := false
 	for {
 		select {
 		case c := <-capa:
+
+			log.Debug(c, "line number 494")
 			{ //if c is less than 0, that means the object is migrated failed.
 				count++
+				log.Println(count, "this is count of obect")
 				if c >= 0 {
 					passedCount++
+					log.Println(count, "this is count of passedobect")
 					capacity += c
 				}
 
 				//update database
 				j.PassedCount = passedCount
 				j.PassedCapacity = capacity
+
 				log.Infof("ObjectMigrated:%d,TotalCapacity:%d Progress:%d\n", j.PassedCount, j.TotalCapacity, j.Progress)
 				db.DbAdapter.UpdateJob(&j)
+
 			}
 		case <-time.After(dur):
 			{
@@ -511,6 +745,7 @@ func runjob(in *pb.RunJobRequest) error {
 			}
 		}
 		if count >= totalObjs || tmout {
+			log.Debug(capa, th, "line number 515")
 			log.Infof("break, capacity=%d, timout=%v, count=%d, passed count=%d\n", capacity, tmout, count, passedCount)
 			close(capa)
 			close(th)
@@ -524,6 +759,10 @@ func runjob(in *pb.RunJobRequest) error {
 	if passedCount < totalObjs {
 		if jobstate[in.Id] == ABORTED {
 			j.Status = ABORTED
+		} else if j.Status == flowtype.JOB_STATUS_HOLD {
+			log.Printf("[INFO] run job Paused: %s\n")
+			log.Printf("[INFO] Migration Paused")
+			j.Status = flowtype.JOB_STATUS_HOLD
 		} else {
 			errmsg := strconv.FormatInt(totalObjs, 10) + " objects, passed " + strconv.FormatInt(passedCount, 10)
 			log.Infof("run job failed: %s\n", errmsg)
@@ -532,6 +771,7 @@ func runjob(in *pb.RunJobRequest) error {
 		}
 	} else {
 		j.Status = flowtype.JOB_STATUS_SUCCEED
+		j.Progress = 100
 	}
 
 	j.EndTime = time.Now()
@@ -551,7 +791,9 @@ func runjob(in *pb.RunJobRequest) error {
 // To calculate Progress of migration process
 func progress(job *flowtype.Job, size int64, wt float64) {
 	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
+	log.Println(job.MigratedCapacity, "this is new log for migrated capacity", size, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", wt)
 	MigratedCapacity := job.MigratedCapacity + float64(size)*(wt/100)
+	log.Println(MigratedCapacity, "new migration capacity")
 	job.MigratedCapacity = math.Round(MigratedCapacity*100) / 100
 	// Progress = Migrated Capacity*100/ Total Capacity
 	job.Progress = int64(job.MigratedCapacity * 100 / float64(job.TotalCapacity))
@@ -582,4 +824,46 @@ func Pause(jobId string) (string, error) {
 	db.DbAdapter.UpdateJob(&j)
 	log.Print("****************************************************************************PAUSED*********************************************************************************************************")
 	return j.Status, nil
+}
+func CheckStatus(job *model.Job, objKey string) bool {
+	var isMig = false
+	for i := range job.ObjList {
+		if job.ObjList[i].ObjKey == objKey {
+			if job.ObjList[i].Migrated == true {
+				log.Print("Object already Migrated %s %s %s", job.ObjList[i].ObjKey, job.ObjList[i].Migrated)
+				isMig = true
+				break
+			}
+			log.Print("MIGRATING OBJECT  %s %s %s", job.ObjList[i].ObjKey, job.ObjList[i].Migrated)
+			break
+		}
+	}
+
+	return isMig
+}
+func SizeCalulator(obj *osdss3.Object) string {
+
+	objectsize := float64(obj.Size)
+	kb := objectsize / 1024
+	mb := kb / 1024
+	gb := mb / 1024
+	tb := gb / 1024
+
+	if tb >= 1 {
+		tbsize := math.Round(tb*100) / 100
+		return fmt.Sprint(tbsize, " TB")
+	} else if gb >= 1 {
+		gbsize := math.Round(gb*100) / 100
+		return fmt.Sprint(gbsize, " GB")
+	} else if mb >= 1 {
+		mbsize := math.Round(mb*100) / 100
+		return fmt.Sprint(mbsize, " MB")
+	} else if kb >= 1 {
+		kbsize := math.Round(kb*100) / 100
+		return fmt.Sprint(kbsize, " KB")
+	} else {
+		byteobjectsize := math.Round(objectsize*100) / 100
+		return fmt.Sprint(byteobjectsize, " B")
+	}
+
 }

@@ -51,4 +51,6 @@ func RegisterRouter(ws *restful.WebService) {
 		Doc("Get job details")
 	ws.Route(ws.POST("/migration/status").To(handler.ChangeMigrationStatus)).
 		Doc("change status of migration")
+	ws.Route(ws.POST("/jobs/{id}/resume").To(handler.ResumeJob)).
+		Doc("Resume Job")
 }

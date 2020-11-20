@@ -36,6 +36,68 @@ import (
 
 type dataflowService struct{}
 
+func (b *dataflowService) ResumeJob(ctx context.Context, in *pb.ResumeJobRequest, out *pb.ResumeJobResponse) error {
+	log.Info("Resume job is called in dataflow service.")
+	if in.Id == "" {
+		errmsg := fmt.Sprint("No id specified.")
+		out.Err = errmsg
+		return nil
+	}
+	jobstatus := db.DbAdapter.GetJobStatus(in.Id)
+	if jobstatus == model.JOB_STATUS_ABORTED {
+		out.Err = "job already aborted"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+
+	if jobstatus == model.JOB_STATUS_SUCCEED {
+		out.Err = "job already completed"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+	if jobstatus == model.JOB_STATUS_FAILED {
+		out.Err = "job current status is failed"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+
+	if jobstatus == model.JOB_STATUS_RUNNING {
+		out.Err = "Job is in running state can't resume"
+		out.Id = in.Id
+		out.Status = jobstatus
+		return nil
+	}
+	if jobstatus == model.JOB_STATUS_HOLD {
+		tenantId, err := utils.GetTenantId(ctx)
+		if err != nil {
+			log.Errorf("run plan failed, err=%v\n", err)
+			return err
+		}
+		userId, err := utils.GetUserId(ctx)
+		if err != nil {
+			log.Errorf("run plan failed, err=%v\n", err)
+			return err
+		}
+
+		jb, err1 := plan.Resume(in.Id, tenantId, userId)
+		if err1 == nil {
+			out.Err = "Job is resumed"
+			out.Id = in.Id
+			out.Status = jb.Status
+		} else {
+			out.Err = "err while resuming"
+			out.Id = in.Id
+			out.Status = jb.Status
+		}
+		return nil
+	}
+
+	return nil
+}
+
 func (b *dataflowService) ChangeStatus(ctx context.Context, request *pb.ChangeStatusRequest, response *pb.ChangeStatusResponse) error {
 	status := request.ChangeStatus.Status
 	var err error
