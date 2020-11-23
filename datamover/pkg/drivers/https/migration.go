@@ -217,7 +217,7 @@ func CopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, jo
 		log.Errorf("copy object[%s] failed, err:%v\n", obj.ObjectKey, err)
 	}
 
-	//progress(job, obj.Size, WT_MOVE)
+	progress(job, obj.Size, WT_MOVE)
 
 	return err
 }
@@ -369,7 +369,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		// update job progress
 		if job != nil {
 			log.Debugln("update job")
-			//progress(job, currPartSize, WT_MOVE)
+			progress(job, currPartSize, WT_MOVE)
 		}
 		resMultipart = false
 	}
@@ -531,7 +531,7 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 		capa <- obj.Size
 		log.Printf("[INFO] CAPACITY  Acapa(capa)=%d\n", len(capa))
 		if job.Type == "migration" {
-			//progress(job, obj.Size, WT_DELETE)
+			progress(job, obj.Size, WT_DELETE)
 		}
 	} else {
 		var t int
@@ -733,10 +733,10 @@ func runjob(in *pb.RunJobRequest) error {
 				//update database
 				j.PassedCount = passedCount
 				j.PassedCapacity = capacity
-				j.Progress = (capacity / totalcapacity) * 100
+				Progress := int64((capacity / totalcapacity) * 100)
 				log.Infof("ObjectMigrated:%d,TotalCapacity:%d Progress:%d\n", j.PassedCount, j.TotalCapacity, j.Progress)
-				log.Println("This is capacity=>", capacity, "This is totalcapacity=>", totalcapacity, "This is passedcapacity=>", j.PassedCapacity)
-				db.DbAdapter.UpdateJob(&j)
+				log.Println("This is progress=>", Progress, "This is totalcapacity=>", totalcapacity, "This is passedcapacity=>", j.PassedCapacity)
+				updateJob(&j)
 
 			}
 		case <-time.After(dur):
@@ -789,18 +789,18 @@ func runjob(in *pb.RunJobRequest) error {
 	return ret
 }
 
-// To calculate Progress of migration process
-//func progress(job *flowtype.Job, size int64, wt float64) {
-//	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
-//	log.Println(job.MigratedCapacity, "this is new log for migrated capacity", size, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", wt)
-//	MigratedCapacity := job.MigratedCapacity + float64(size)*(wt/100)
-//	log.Println(MigratedCapacity, "new migration capacity")
-//	job.MigratedCapacity = math.Round(MigratedCapacity*100) / 100
-//	// Progress = Migrated Capacity*100/ Total Capacity
-//	job.Progress = int64(job.MigratedCapacity * 100 / float64(job.TotalCapacity))
-//	log.Debugf("Progress %d, MigratedCapacity %d, TotalCapacity %d\n", job.Progress, job.MigratedCapacity, job.TotalCapacity)
-//	db.DbAdapter.UpdateJob(job)
-//}
+//To calculate Progress of migration process
+func progress(job *flowtype.Job, size int64, wt int64) {
+	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
+	log.Println(job.MigratedCapacity, "this is new log for migrated capacity", size, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", wt)
+	MigratedCapacity := job.PassedCapacity + (size)*(wt/100)
+	log.Println(MigratedCapacity, "new migration capacity")
+	job.PassedCapacity = MigratedCapacity * 100 / 100
+	// Progress = Migrated Capacity*100/ Total Capacity
+	job.Progress = int64(job.PassedCapacity * 100 / job.TotalCapacity)
+	log.Debugf("Progress %d, MigratedCapacity %d, TotalCapacity %d\n", job.Progress, job.MigratedCapacity, job.TotalCapacity)
+	db.DbAdapter.UpdateJob(job)
+}
 func Abort(jobId string) (string, error) {
 	j := flowtype.Job{Id: bson.ObjectIdHex(jobId)}
 
