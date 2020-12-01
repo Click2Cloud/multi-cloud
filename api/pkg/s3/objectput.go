@@ -39,6 +39,12 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 	bucketName := request.PathParameter(common.REQUEST_PATH_BUCKET_NAME)
 	objectKey := request.PathParameter(common.REQUEST_PATH_OBJECT_KEY)
 	backendName := request.HeaderParameter(common.REQUEST_HEADER_BACKEND)
+	tierInString := request.HeaderParameter(common.REQUEST_OBJECT_TIER)
+	tier, err1 := strconv.Atoi(tierInString)
+	if err1 != nil {
+		tier = 1
+		log.Error("Unable to convert tier string to int", err1)
+	}
 	url := request.Request.URL
 	if strings.HasSuffix(url.String(), "/") {
 		objectKey = objectKey + "/"
@@ -133,6 +139,7 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 		Attrs:      metadata,
 		Location:   location,
 		Size:       size,
+		Tier:       int32(tier),
 	}
 	// add all header information, if any
 	obj.Headers = make(map[string]*pb.HeaderValues, len(request.Request.Header))
