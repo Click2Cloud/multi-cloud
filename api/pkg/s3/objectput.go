@@ -39,12 +39,13 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 	bucketName := request.PathParameter(common.REQUEST_PATH_BUCKET_NAME)
 	objectKey := request.PathParameter(common.REQUEST_PATH_OBJECT_KEY)
 	backendName := request.HeaderParameter(common.REQUEST_HEADER_BACKEND)
-	tierInString := request.HeaderParameter(common.REQUEST_OBJECT_TIER)
-	tier, err1 := strconv.Atoi(tierInString)
+	tier, err1 := getTierFromHeader(request)
 	if err1 != nil {
-		tier = 1
-		log.Error("Unable to convert tier string to int", err1)
+		log.Errorf("failed to get storage class from http header. err:", err1)
+		WriteErrorResponse(response, request, err1)
+		return
 	}
+
 	url := request.Request.URL
 	if strings.HasSuffix(url.String(), "/") {
 		objectKey = objectKey + "/"
