@@ -229,7 +229,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	if obj.Size%PART_SIZE != 0 {
 		partCount++
 	}
-	if job != nil || job.Id.Hex() != "" {
+	if job != nil {
 		status := jobstate[job.Id.Hex()]
 		if status == ABORTED {
 			if job.Status != ABORTED {
@@ -261,7 +261,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	var partNo int64 = 1
 	var resMultipart = false
 	currPartSize := PART_SIZE
-	if job != nil || job.Id.Hex() != "" {
+	if job != nil {
 		for m := range job.ObjList {
 			if job.ObjList[m].ObjKey == obj.ObjectKey && job.ObjList[m].PartNo != 0 {
 				partNo = job.ObjList[m].PartNo
@@ -366,7 +366,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 
 		log.Debugf("copy part[obj=%s, uploadId=%s, ReadOffset=%d, ReadLength=%d] succeed\n", obj.ObjectKey,
 			uploadId, offset, currPartSize)
-		if job == nil || job.Id.Hex() == "" {
+		if job == nil {
 			completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
 			completeParts = append(completeParts, completePart)
 		}
@@ -379,7 +379,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		//}
 		resMultipart = false
 	}
-	if job != nil || job.Id.Hex() != "" {
+	if job != nil {
 		for j := range job.ObjList {
 			//logger.Printf("job update Inside FOR LOOP objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
 			if job.ObjList[j].ObjKey == obj.ObjectKey {
@@ -398,7 +398,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			}
 		}
 	}
-	if job != nil || job.Id.Hex() != "" {
+	if job != nil {
 		if jobstate[job.Id.Hex()] == PAUSED && i != partCount {
 			job.TimeRequired = 0
 			job.Msg = "Migration Paused"
