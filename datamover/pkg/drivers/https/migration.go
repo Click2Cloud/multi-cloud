@@ -279,7 +279,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		if i+1 == partCount {
 			currPartSize = obj.Size - offset
 		}
-		if job != nil || job.Id.Hex() != "" {
+		if job != nil {
 			status1 := jobstate[job.Id.Hex()]
 			if status1 == ABORTED {
 				err = errors.New(ABORTED)
@@ -322,7 +322,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		opt := client.WithRequestTimeout(time.Duration(tmoutSec) * time.Second)
 		var status2 string
 		for try < 3 { // try 3 times in case network is not stable
-			if job != nil || job.Id.Hex() != "" {
+			if job != nil {
 				status2 = jobstate[job.Id.Hex()]
 			}
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
@@ -409,7 +409,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		}
 	}
 	var StatusCheck string
-	if job != nil || job.Id.Hex() != "" {
+	if job != nil {
 		StatusCheck = jobstate[job.Id.Hex()]
 	}
 	if err == nil && StatusCheck != PAUSED {
