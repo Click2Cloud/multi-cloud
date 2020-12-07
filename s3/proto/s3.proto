@@ -240,7 +240,9 @@ message PutObjectRequest {
     int64 size = 6;
     string contentType = 7;
     map<string, HeaderValues> headers = 8;
+    int32 tier=9;
 }
+
 
 message GetObjectResponse {
     int32 errorCode = 1;

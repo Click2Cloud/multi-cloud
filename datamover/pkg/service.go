@@ -63,7 +63,7 @@ func InitDatamoverService() error {
 	return nil
 }
 func (b *datamoverService) AbortJob(ctx context.Context, in *pb.AbortJobRequest, out *pb.AbortJobResponse) error {
-	log.Info("Cancel job is called in datamover service.*************************************************************************")
+	log.Info("*******************************AbortJob is called in datamover service******************************************")
 	//actx := c.NewContextFromJson(in.GetContext())
 	if in.Id == "" {
 		errmsg := fmt.Sprint("No id specified.")

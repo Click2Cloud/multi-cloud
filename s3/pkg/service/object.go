@@ -166,7 +166,7 @@ func (s *s3Service) PutObject(ctx context.Context, in pb.S3_PutObjectStream) err
 	actualSize := req.Size
 
 	// encrypt if needed
-	obj := &pb.Object{BucketName: req.BucketName, ObjectKey: req.ObjectKey}
+	obj := &pb.Object{BucketName: req.BucketName, ObjectKey: req.ObjectKey, Tier: req.Tier}
 	// if the header contains the encryption header, encrypt
 	headerValues, ok := req.Headers["X-Amz-Server-Side-Encryption"]
 	if bucket.ServerSideEncryption.SseType == "SSE" {
@@ -253,7 +253,7 @@ func (s *s3Service) PutObject(ctx context.Context, in pb.S3_PutObjectStream) err
 	obj.DeleteMarker = false
 	obj.CustomAttributes = req.Attrs
 	obj.Type = meta.ObjectTypeNormal
-	obj.Tier = utils.Tier1 // Currently only support tier1
+	obj.Tier = req.Tier // Currently only support tier1
 	obj.StorageMeta = res.Meta
 	obj.EncSize = req.Size
 	obj.Location = backendName
