@@ -75,6 +75,7 @@ const (
 	REQUEST_HEADER_CONTENT_TYPE      = "Content-Type"
 	REQUEST_HEADER_SSE_KEY           = "x-amz-server-side-encryption"
 	REQUEST_HEADER_SSE_VALUE_AES256  = "AES256"
+	REQUEST_OBJECT_TIER              = "tier"
 )
 
 const (
