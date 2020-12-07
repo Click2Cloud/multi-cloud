@@ -221,34 +221,32 @@ func CopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, jo
 }
 
 func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, job *flowtype.Job) error {
-	//if job == nil || job.Id.Hex() == "" {
-	//	return errors.New("job cannot be nil")
-	//}
+	if job == nil || job.Id.Hex() == "" {
+		return errors.New("job cannot be nil")
+	}
 	log.Debugf("obj.Size=%d, PART_SIZE=%d\n", obj.Size, PART_SIZE)
 	partCount := int64(obj.Size / PART_SIZE)
 	if obj.Size%PART_SIZE != 0 {
 		partCount++
 	}
-	if job != nil {
-		status := jobstate[job.Id.Hex()]
-		if status == ABORTED {
-			if job.Status != ABORTED {
-				job.EndTime = time.Now()
-				job.Status = ABORTED
-				job.EndTime = time.Now()
-				db.DbAdapter.UpdateJob(job)
-			}
-			return errors.New(job.Status)
+	status := jobstate[job.Id.Hex()]
+	if status == ABORTED {
+		if job.Status != ABORTED {
+			job.EndTime = time.Now()
+			job.Status = ABORTED
+			job.EndTime = time.Now()
+			db.DbAdapter.UpdateJob(job)
 		}
-		if status == PAUSED {
-			if job.Status != PAUSED {
-				job.EndTime = time.Now()
-				job.Status = PAUSED
-				job.EndTime = time.Now()
-				db.DbAdapter.UpdateJob(job)
-			}
-			return errors.New(job.Status)
+		return errors.New(job.Status)
+	}
+	if status == PAUSED {
+		if job.Status != PAUSED {
+			job.EndTime = time.Now()
+			job.Status = PAUSED
+			job.EndTime = time.Now()
+			db.DbAdapter.UpdateJob(job)
 		}
+		return errors.New(job.Status)
 	}
 	log.Infof("*****Copy object[%s] from #%s# to #%s#, size=%d, partCount=%d.\n", obj.ObjectKey, obj.BucketName,
 		destLoca.BucketName, obj.Size, partCount)
@@ -261,34 +259,32 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	var partNo int64 = 1
 	var resMultipart = false
 	currPartSize := PART_SIZE
-	if job != nil {
-		for m := range job.ObjList {
-			if job.ObjList[m].ObjKey == obj.ObjectKey && job.ObjList[m].PartNo != 0 {
-				partNo = job.ObjList[m].PartNo
-				uploadId = job.ObjList[m].UploadId
-				log.Printf("[INFO] MIGRATION RESUMING objKey:%s \n", obj.ObjectKey)
-				log.Print("GOT PART NO for ", job.ObjList[m].ObjKey, job.ObjList[m].UploadId, job.ObjList[m])
-				resMultipart = true
-				break
-			}
+	for m := range job.ObjList {
+		if job.ObjList[m].ObjKey == obj.ObjectKey && job.ObjList[m].PartNo != 0 {
+			partNo = job.ObjList[m].PartNo
+			uploadId = job.ObjList[m].UploadId
+			log.Printf("[INFO] MIGRATION RESUMING objKey:%s \n", obj.ObjectKey)
+			log.Print("GOT PART NO for ", job.ObjList[m].ObjKey, job.ObjList[m].UploadId, job.ObjList[m])
+			resMultipart = true
+			break
 		}
 	}
 	for i = partNo - 1; i < partCount; i++ {
+
 		partNumber := i + 1
+
 		offset := int64(i) * PART_SIZE
 		if i+1 == partCount {
 			currPartSize = obj.Size - offset
 		}
-		if job != nil {
-			status1 := jobstate[job.Id.Hex()]
-			if status1 == ABORTED {
-				err = errors.New(ABORTED)
-				break
-			}
-			if status1 == PAUSED {
-				err = nil
-				break
-			}
+		status1 := jobstate[job.Id.Hex()]
+		if status1 == ABORTED {
+			err = errors.New(ABORTED)
+			break
+		}
+		if status1 == PAUSED {
+			err = nil
+			break
 		}
 
 		if partNumber == 1 || resMultipart == true {
@@ -320,11 +316,8 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		try := 0
 		tmoutSec := currPartSize / MiniSpeed
 		opt := client.WithRequestTimeout(time.Duration(tmoutSec) * time.Second)
-		var status2 string
 		for try < 3 { // try 3 times in case network is not stable
-			if job != nil {
-				status2 = jobstate[job.Id.Hex()]
-			}
+			status2 := jobstate[job.Id.Hex()]
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
 			if status2 != ABORTED || status2 != PAUSED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
@@ -358,7 +351,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			try++
 			time.Sleep(time.Second * 1)
 		}
-
 		if try == 3 {
 			log.Errorln("copy part failed too many times")
 			break
@@ -366,10 +358,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 
 		log.Debugf("copy part[obj=%s, uploadId=%s, ReadOffset=%d, ReadLength=%d] succeed\n", obj.ObjectKey,
 			uploadId, offset, currPartSize)
-		if job == nil {
-			completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
-			completeParts = append(completeParts, completePart)
-		}
 		log.Println(rsp, "  Etag  ", rsp.Etag)
 
 		// update job progress
@@ -379,39 +367,34 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		//}
 		resMultipart = false
 	}
-	if job != nil {
-		for j := range job.ObjList {
-			//logger.Printf("job update Inside FOR LOOP objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
-			if job.ObjList[j].ObjKey == obj.ObjectKey {
-				log.Printf("job update OBJECT IDENTIFIED objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
-				job.ObjList[j].UploadId = uploadId
-				job.ObjList[j].PartNo = partNo
-				for m := range completeParts {
-					if len(job.ObjList[j].PartTag) == int(completeParts[m].PartNumber)-1 {
-						job.ObjList[j].PartTag = append(job.ObjList[j].PartTag, completeParts[m])
-					}
+	for j := range job.ObjList {
+		//logger.Printf("job update Inside FOR LOOP objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
+		if job.ObjList[j].ObjKey == obj.ObjectKey {
+			log.Printf("job update OBJECT IDENTIFIED objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
+			job.ObjList[j].UploadId = uploadId
+			job.ObjList[j].PartNo = partNo
+			for m := range completeParts {
+				if len(job.ObjList[j].PartTag) == int(completeParts[m].PartNumber)-1 {
+					job.ObjList[j].PartTag = append(job.ObjList[j].PartTag, completeParts[m])
 				}
-				completeParts = job.ObjList[j].PartTag
-				log.Print("UPDATE STATUS FOR M", job.ObjList[j].ObjKey, job.ObjList[j].Migrated)
-				db.DbAdapter.UpdateJob(job)
-				break
 			}
-		}
-	}
-	if job != nil {
-		if jobstate[job.Id.Hex()] == PAUSED && i != partCount {
-			job.TimeRequired = 0
-			job.Msg = "Migration Paused"
-			job.Status = flowtype.JOB_STATUS_HOLD
+			completeParts = job.ObjList[j].PartTag
+			log.Print("UPDATE STATUS FOR M", job.ObjList[j].ObjKey, job.ObjList[j].Migrated)
 			db.DbAdapter.UpdateJob(job)
-			log.Printf("JOB PAUSED RETURNING POINT-9 objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
-			return errors.New(job.Msg)
+			break
 		}
 	}
-	var StatusCheck string
-	if job != nil {
-		StatusCheck = jobstate[job.Id.Hex()]
+	if jobstate[job.Id.Hex()] == PAUSED && i != partCount {
+		job.TimeRequired = 0
+		job.Msg = "Migration Paused"
+		job.Status = flowtype.JOB_STATUS_HOLD
+		db.DbAdapter.UpdateJob(job)
+		log.Printf("JOB PAUSED RETURNING POINT-9 objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
+		return errors.New(job.Msg)
 	}
+
+	StatusCheck := jobstate[job.Id.Hex()]
+
 	if err == nil && StatusCheck != PAUSED {
 		// copy parts succeed, need to complete it
 		completeReq := &osdss3.CompleteMultipartRequest{BucketName: destLoca.BucketName, ObjectKey: obj.ObjectKey,
@@ -445,7 +428,119 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		destLoca.BakendName)
 	return nil
 }
+func MultipartCopyObjLifecycle(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, job *flowtype.Job) error {
+	log.Debugf("obj.Size=%d, PART_SIZE=%d\n", obj.Size, PART_SIZE)
+	partCount := int64(obj.Size / PART_SIZE)
+	if obj.Size%PART_SIZE != 0 {
+		partCount++
+	}
 
+	log.Infof("*****Copy object[%s] from #%s# to #%s#, size=%d, partCount=%d.\n", obj.ObjectKey, obj.BucketName,
+		destLoca.BucketName, obj.Size, partCount)
+
+	var i int64
+	var err error
+	var uploadId string
+	var initSucceed bool = false
+	var completeParts []*osdss3.CompletePart
+	currPartSize := PART_SIZE
+	for i = 0; i < partCount; i++ {
+		partNumber := i + 1
+		offset := int64(i) * PART_SIZE
+		if i+1 == partCount {
+			currPartSize = obj.Size - offset
+		}
+
+		if partNumber == 1 {
+			// init upload
+			rsp, err := s3client.InitMultipartUpload(ctx, &osdss3.InitMultiPartRequest{
+				BucketName: destLoca.BucketName,
+				ObjectKey:  obj.ObjectKey,
+				Tier:       destLoca.Tier,
+				Location:   destLoca.BakendName,
+				Attrs:      obj.CustomAttributes,
+				// TODO: add content-type
+			})
+			if err != nil {
+				log.Errorf("init mulipart upload failed:%v\n", err)
+				break
+			}
+			initSucceed = true
+			uploadId = rsp.UploadID
+			log.Debugln("**** init multipart upload succeed, uploadId=", uploadId)
+		}
+
+		// copy part
+		copyReq := &osdss3.CopyObjPartRequest{SourceBucket: obj.BucketName, SourceObject: obj.ObjectKey,
+			TargetBucket: destLoca.BucketName, TargetObject: obj.ObjectKey, PartID: partNumber,
+			UploadID: uploadId, ReadOffset: offset, ReadLength: currPartSize, TargetLocation: destLoca.BakendName,
+		}
+		var rsp *osdss3.CopyObjPartResponse
+		try := 0
+		tmoutSec := currPartSize / MiniSpeed
+		opt := client.WithRequestTimeout(time.Duration(tmoutSec) * time.Second)
+		for try < 3 { // try 3 times in case network is not stable
+			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
+			rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
+			if err == nil {
+				log.Debugln("copy part succeed")
+				break
+			} else {
+				log.Warnf("copy part failed, err:%v\n", err)
+			}
+			try++
+			time.Sleep(time.Second * 1)
+		}
+		if try == 3 {
+			log.Errorln("copy part failed too many times")
+			break
+		}
+
+		log.Debugf("copy part[obj=%s, uploadId=%s, ReadOffset=%d, ReadLength=%d] succeed\n", obj.ObjectKey,
+			uploadId, offset, currPartSize)
+		completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
+		completeParts = append(completeParts, completePart)
+
+		// update job progress
+		//if job != nil {
+		//	log.Debugln("update job")
+		//	progress(job, currPartSize, WT_MOVE)
+		//}
+	}
+
+	if err == nil {
+		// copy parts succeed, need to complete it
+		completeReq := &osdss3.CompleteMultipartRequest{BucketName: destLoca.BucketName, ObjectKey: obj.ObjectKey,
+			UploadId: uploadId, CompleteParts: completeParts, SourceVersionID: obj.VersionId}
+		if job == nil {
+			// this is for lifecycle management
+			completeReq.RequestType = s3utils.RequestType_Lifecycle
+		}
+		_, err = s3client.CompleteMultipartUpload(ctx, completeReq)
+		if err != nil {
+			log.Errorf("complete multipart copy failed, err:%v\n", err)
+		}
+	}
+
+	if err != nil {
+		if initSucceed == true {
+			log.Debugf("abort multipart copy, bucket:%s, object:%s, uploadid:%s\n", destLoca.BucketName, obj.ObjectKey, uploadId)
+			_, ierr := s3client.AbortMultipartUpload(ctx, &osdss3.AbortMultipartRequest{BucketName: destLoca.BucketName,
+				ObjectKey: obj.ObjectKey, UploadId: uploadId,
+			})
+			if ierr != nil {
+				// it shoud be cleaned by gc in s3 service
+				log.Warnf("abort multipart copy failed, err:%v\n", ierr)
+			}
+		}
+
+		return err
+	}
+
+	log.Infof("*****Copy object[%s] from #%s# to #%s# succeed.\n", obj.ObjectKey, obj.Location,
+		destLoca.BakendName)
+	return nil
+}
 func deleteObj(ctx context.Context, obj *osdss3.Object) error {
 	delMetaReq := osdss3.DeleteObjectInput{Bucket: obj.BucketName, Key: obj.ObjectKey}
 	_, err := s3client.DeleteObject(ctx, &delMetaReq)

@@ -81,7 +81,7 @@ func MultipartMoveObj(obj *osdss3.Object, targetLoc *LocationInfo, partSize int6
 		}
 		mutex.Unlock()
 	}
-	err := migration.MultipartCopyObj(ctx, obj, targetLoc, nil)
+	err := migration.MultipartCopyObjLifecycle(ctx, obj, targetLoc, nil)
 	if err != nil {
 		log.Errorf("multipart move object[] failed, err:%v\n", err)
 	}
