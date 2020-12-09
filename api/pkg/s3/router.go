@@ -47,5 +47,5 @@ func RegisterRouter(ws *restful.WebService) {
 
 	// router for SSE
 	ws.Route(ws.PUT("/{bucketName}/?DefaultEncryption").To(handler.RouteBucketPut)).Doc("Set default encryption on bucket")
-	ws.Route(ws.PUT("/transition/{bucketName}/{objectKey:*}").To(handler.RouteMoveToGlacier)).Doc("Set default encryption on bucket")
+	ws.Route(ws.POST("/transition/{bucketName}/{objectKey}").To(handler.RouteMoveToGlacier)).Doc("Set default encryption on bucket")
 }
