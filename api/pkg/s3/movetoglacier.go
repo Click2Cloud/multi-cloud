@@ -1,7 +1,6 @@
 package s3
 
 import (
-	"context"
 	"github.com/emicklei/go-restful"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 	"github.com/opensds/multi-cloud/s3/pkg/utils"
@@ -14,7 +13,7 @@ func (s *APIService) MoveToGlacier(request *restful.Request, response *restful.R
 	objectKey := request.PathParameter(common.REQUEST_PATH_OBJECT_KEY)
 	log.Println(bucketName, objectKey, "this is the request data")
 	var tier int32 = 999
-	ctx := context.Background()
+	ctx := common.InitCtxWithAuthInfo(request)
 	object, a, b, err := s.getObjectMeta(ctx, bucketName, objectKey, "", false)
 	log.Println(object, a, b, "this is the object data")
 	if err != nil {
