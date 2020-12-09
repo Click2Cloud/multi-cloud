@@ -12,11 +12,14 @@ import (
 func (s *APIService) MoveToGlacier(request *restful.Request, response *restful.Response) {
 	bucketName := request.PathParameter(common.REQUEST_PATH_BUCKET_NAME)
 	objectKey := request.PathParameter(common.REQUEST_PATH_OBJECT_KEY)
+	log.Println(bucketName, objectKey, "this is the request data")
 	var tier int32 = 999
 	ctx := context.Background()
 	object, _, _, err := s.getObjectMeta(ctx, bucketName, objectKey, "", true)
+	log.Println(object, "this is the object data")
 	if err != nil {
 		WriteErrorResponse(response, request, err)
+		log.Error(err)
 		return
 	}
 
