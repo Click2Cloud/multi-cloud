@@ -14,8 +14,8 @@ func (s *APIService) MoveToGlacier(request *restful.Request, response *restful.R
 	log.Println(bucketName, objectKey, "this is the request data")
 	var tier int32 = 999
 	ctx := common.InitCtxWithAuthInfo(request)
-	object, a, b, err := s.getObjectMeta(ctx, bucketName, objectKey, "", false)
-	log.Println(object, a, b, "this is the object data")
+	object, _, _, err := s.getObjectMeta(ctx, bucketName, objectKey, "", false)
+	log.Println(object, "this is the object data")
 	if err != nil {
 		WriteErrorResponse(response, request, err)
 		log.Error(err)
