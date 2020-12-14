@@ -429,6 +429,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	return nil
 }
 func MultipartCopyObjLifecycle(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, job *flowtype.Job) error {
+	//todo redundant code remove this
 	log.Debugf("obj.Size=%d, PART_SIZE=%d\n", obj.Size, PART_SIZE)
 	partCount := int64(obj.Size / PART_SIZE)
 	if obj.Size%PART_SIZE != 0 {
