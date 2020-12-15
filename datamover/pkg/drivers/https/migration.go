@@ -318,7 +318,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		opt := client.WithRequestTimeout(time.Duration(tmoutSec) * time.Second)
 		for try < 3 { // try 3 times in case network is not stable
 			status2 := jobstate[job.Id.Hex()]
-			//log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
+			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
 			if status2 != ABORTED || status2 != PAUSED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
 				completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
@@ -360,11 +360,11 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			uploadId, offset, currPartSize)
 		log.Println(rsp, "  Etag  ", rsp.Etag)
 
-		//update job progress
-		if job != nil {
-			log.Debugln("update job")
-			//progress(job, currPartSize, WT_MOVE)
-		}
+		// update job progress
+		//if job != nil {
+		//	log.Debugln("update job")
+		//	progress(job, currPartSize, WT_MOVE)
+		//}
 		resMultipart = false
 	}
 	for j := range job.ObjList {
@@ -655,6 +655,7 @@ func updateJob(j *flowtype.Job) {
 	log.Println(j)
 	for i := 1; i <= 3; i++ {
 		err := db.DbAdapter.UpdateJob(j)
+		log.Println(i)
 		if err == nil {
 			break
 		}
