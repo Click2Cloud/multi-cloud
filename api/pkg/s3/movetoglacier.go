@@ -36,7 +36,7 @@ func (s *APIService) MoveToGlacier(request *restful.Request, response *restful.R
 		WriteErrorResponse(response, request, err)
 	} else {
 		log.Infof("Transition of %s succeed.\n", objectKey)
-		response.WriteEntity("Object Moved To Glacier")
+		response.WriteAsJson("Object Moved To Glacier")
 	}
 
 }
