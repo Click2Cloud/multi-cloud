@@ -49,6 +49,7 @@ func countOsdsS3Objs(ctx context.Context, in *pb.RunJobRequest) (count, size int
 	log.Debugf("count objects of bucket[%s].\n", in.SourceConn.BucketName)
 
 	req := osdss3.ListObjectsRequest{Bucket: in.SourceConn.BucketName}
+
 	if in.GetFilt() != nil && len(in.Filt.Prefix) > 0 {
 		req.Prefix = in.Filt.Prefix
 	}
@@ -64,6 +65,7 @@ func countOsdsS3Objs(ctx context.Context, in *pb.RunJobRequest) (count, size int
 }
 
 func countObjs(ctx context.Context, in *pb.RunJobRequest) (count, size int64, err error) {
+
 	switch in.SourceConn.Type {
 	case flowtype.STOR_TYPE_OPENSDS:
 		return countOsdsS3Objs(ctx, in)
@@ -91,7 +93,14 @@ func getOsdsS3Objs(ctx context.Context, in *pb.RunJobRequest, marker string, lim
 			in.SourceConn.BucketName, marker, limit, err)
 		return nil, err
 	}
+	var obj []*osdss3.Object
+	for i := range rsp.Objects {
+		if rsp.Objects[i].StorageClass == "Tier1" {
+			obj = append(obj, rsp.Objects[i])
+		}
 
+	}
+	rsp.Objects = obj
 	log.Debugf("get osds objects successfully")
 	return rsp.Objects, nil
 }
