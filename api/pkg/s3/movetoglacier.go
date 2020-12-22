@@ -33,9 +33,10 @@ func (s *APIService) MoveToGlacier(request *restful.Request, response *restful.R
 	if err2 != nil {
 		// if failed, it will try again in the next round schedule
 		log.Errorf("Transition of %s failed:%v\n", objectKey, err)
-		WriteErrorResponse(response, request, err)
+		response.WriteAsJson("Failed to Change Transition")
 	} else {
 		log.Infof("Transition of %s succeed.\n", objectKey)
+		response.WriteAsJson("Object Moved To Glacier")
 	}
 
 }
