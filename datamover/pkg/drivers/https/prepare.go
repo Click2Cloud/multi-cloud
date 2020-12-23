@@ -95,7 +95,7 @@ func getOsdsS3Objs(ctx context.Context, in *pb.RunJobRequest, marker string, lim
 	}
 	var obj []*osdss3.Object
 	for i := range rsp.Objects {
-		if rsp.Objects[i].StorageClass == "Tier1" {
+		if rsp.Objects[i].StorageClass == "STANDARD" {
 			obj = append(obj, rsp.Objects[i])
 
 		}
