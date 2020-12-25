@@ -748,8 +748,11 @@ func runjob(in *pb.RunJobRequest) error {
 	var totalcount int64 = 0
 	var totalcap int64 = 0
 	for i := 0; i < totalObj; i++ {
-		totalcount++
-		totalcap += objs[i].Size
+		if objs[i].StorageClass == "STANDARD" {
+			totalcap += objs[i].Size
+			totalcount++
+		}
+		//	totalcap += objs[i].Size
 	}
 	if j.TotalCount != totalcount {
 		j.TotalCount = totalcount
