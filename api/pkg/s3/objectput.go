@@ -68,6 +68,7 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 	//changing size migth not be correct(hard coding size for testing purpose )
 	if strings.HasSuffix(objectKey, "/") {
 		size = 0
+		log.Println(size, "this is the size for folder")
 	}
 	//////////////above code is for testing purpose
 
