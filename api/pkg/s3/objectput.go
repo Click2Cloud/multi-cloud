@@ -65,6 +65,12 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 	if err != nil {
 		return
 	}
+	//changing size migth not be correct(hard coding size for testing purpose )
+	if strings.HasSuffix(objectKey, "/") {
+		size = 0
+	}
+	//////////////above code is for testing purpose
+
 	if size == -1 {
 		WriteErrorResponse(response, request, s3error.ErrMissingContentLength)
 		return
