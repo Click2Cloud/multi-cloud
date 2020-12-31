@@ -174,17 +174,19 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 	for !eof {
 		n, err := dataReader.Read(buf)
 		if err != nil && err != io.EOF {
-			log.Errorf("read error:%v\n", err)
-			break
+			if err == io.ErrUnexpectedEOF {
+				if folderUpload {
+					log.Debugln("Unfinished read for folder")
+					eof = true
+				}
+			} else {
+				log.Errorf("read error:%v\n", err)
+				break
+			}
 		}
 		if err == io.EOF {
 			log.Debugln("finished read")
 			eof = true
-		} else if err == io.ErrUnexpectedEOF {
-			if folderUpload {
-				log.Debugln("Unfinished read for folder")
-				eof = true
-			}
 		}
 		err = stream.Send(&s3.PutDataStream{Data: buf[:n]})
 
