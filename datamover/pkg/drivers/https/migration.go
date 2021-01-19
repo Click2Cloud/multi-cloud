@@ -822,7 +822,7 @@ func runjob(in *pb.RunJobRequest) error {
 
 				//update database
 				j.PassedCount = passedCount
-				j.PassedCapacity = capacity
+				//j.PassedCapacity = capacity
 				//j.Progress = int64((float32(capacity) / float32(totalcapacity)) * 100)
 				log.Infof("ObjectMigrated:%d,TotalCapacity:%d Progress:%d\n", j.PassedCount, j.TotalCapacity, j.Progress)
 				log.Println("This is progress=>", j.Progress, "This is totalcapacity=>", totalcapacity, "This is passedcapacity=>", j.PassedCapacity)
