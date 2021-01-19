@@ -322,7 +322,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			if status2 != ABORTED || status2 != PAUSED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
 				if err != nil || rsp == nil {
-					log.Debugln("copy part failed")
+					log.Warnf("copy part failed, err:%v\n", err)
 					break
 				}
 				completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
@@ -362,7 +362,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 
 		log.Debugf("copy part[obj=%s, uploadId=%s, ReadOffset=%d, ReadLength=%d] succeed\n", obj.ObjectKey,
 			uploadId, offset, currPartSize)
-		log.Println(rsp, "  Etag  ", rsp.Etag)
+		//log.Println(rsp, "  Etag  ", rsp.Etag)
 
 		// update job progress
 		log.Debugln("update job")
