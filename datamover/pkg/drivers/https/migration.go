@@ -321,6 +321,10 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
 			if status2 != ABORTED || status2 != PAUSED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
+				if err != nil || rsp == nil {
+					log.Debugln("copy part failed")
+					break
+				}
 				completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
 				completeParts = append(completeParts, completePart)
 
@@ -397,10 +401,10 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		// copy parts succeed, need to complete it
 		completeReq := &osdss3.CompleteMultipartRequest{BucketName: destLoca.BucketName, ObjectKey: obj.ObjectKey,
 			UploadId: uploadId, CompleteParts: completeParts, SourceVersionID: obj.VersionId}
-		if job == nil {
-			// this is for lifecycle management
-			completeReq.RequestType = s3utils.RequestType_Lifecycle
-		}
+		//if job == nil {
+		//	// this is for lifecycle management
+		//	completeReq.RequestType = s3utils.RequestType_Lifecycle
+		//}
 		_, err = s3client.CompleteMultipartUpload(ctx, completeReq)
 		if err != nil {
 			log.Errorf("complete multipart copy failed, err:%v\n", err)
