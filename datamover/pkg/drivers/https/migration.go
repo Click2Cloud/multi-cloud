@@ -46,7 +46,7 @@ var bkendclient backend.BackendService
 var MiniSpeed int64 = 5 // 5KByte/Sec
 var jobstate = make(map[string]string)
 
-const WT_MOVE = 96
+const WT_MOVE = 100
 const WT_DELETE = 4
 const JobType = "migration"
 
@@ -620,9 +620,9 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 		log.Info(" CAPACITY  bcapa(capa)=%d\n", len(capa))
 		capa <- obj.Size
 		log.Info(" CAPACITY  Acapa(capa)=%d\n", len(capa))
-		if job.Type == "migration" {
-			progress(job, obj.Size, WT_DELETE)
-		}
+		//if job.Type == "migration" {
+		//	progress(job, obj.Size, WT_DELETE)
+		//}
 	} else {
 		var t int
 		if job.Status != flowtype.JOB_STATUS_ABORTED && job.Status != flowtype.JOB_STATUS_HOLD {
