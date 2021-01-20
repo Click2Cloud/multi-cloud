@@ -321,12 +321,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
 			if status2 != ABORTED || status2 != PAUSED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
-				if err == nil {
-					log.Debugln("copy part succeed")
-					log.Debugln("update job")
-					progress(job, currPartSize, WT_MOVE)
-					break
-				}
 				completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
 				completeParts = append(completeParts, completePart)
 
@@ -336,6 +330,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 					job.Status = ABORTED
 					job.EndTime = time.Now()
 					db.DbAdapter.UpdateJob(job)
+					log.Debugln("aborted--->>", try)
 				}
 				break
 			} else if status2 == PAUSED {
@@ -344,6 +339,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 					job.Status = PAUSED
 					job.EndTime = time.Now()
 					db.DbAdapter.UpdateJob(job)
+					log.Debugln("paused--->>", try)
 				}
 				break
 			}
@@ -366,6 +362,12 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			uploadId, offset, currPartSize)
 		log.Println(rsp, "  Etag  ", rsp.Etag)
 
+		// update job progress
+		status3 := jobstate[job.Id.Hex()]
+		if err == nil && status3 != ABORTED && status3 != PAUSED {
+			log.Debugln("update job")
+			progress(job, currPartSize, WT_MOVE)
+		}
 		resMultipart = false
 	}
 	for j := range job.ObjList {
@@ -878,23 +880,22 @@ func runjob(in *pb.RunJobRequest) error {
 }
 
 //To calculate Progress of migration process
-func progress(job *flowtype.Job, size int64, wt int64) {
+func progress(job *flowtype.Job, size int64, wt float64) {
 	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
 	log.Println(job.MigratedCapacity, "this is new log for migrated capacity", size, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", wt)
-	MigratedCapacity := float32(job.PassedCapacity) + float32(size)*(float32(wt)/100)
+	MigratedCapacity := float64(job.PassedCapacity) + float64(size)*(wt/100)
 	log.Println(MigratedCapacity, "new migration capacity")
-	job.PassedCapacity = int64(MigratedCapacity)
-	// Progress = Migrated Capacity*100/ Total Capacity
+	job.PassedCapacity = int64(math.Round(MigratedCapacity*100) / 100)
 	//job.Progress = int64(((size)*(wt/100) + job.PassedCapacity*100) / job.TotalCapacity)
-	job.Progress = int64((float32(job.PassedCapacity) / float32(job.TotalCapacity)) * 100)
+	job.Progress = int64((float64(job.PassedCapacity) / float64(job.TotalCapacity)) * 100)
 	log.Debugf("Progress %d, MigratedCapacity %d, TotalCapacity %d\n", job.Progress, job.MigratedCapacity, job.TotalCapacity)
 	db.DbAdapter.UpdateJob(job)
 }
+
 func Abort(jobId string) (string, error) {
 	j := flowtype.Job{Id: bson.ObjectIdHex(jobId)}
 
 	if jobstate[jobId] == PAUSED {
-		//	logger.Println("Migration Aborted Successfully.")
 		log.Infof("Migration Aborted Successfully.")
 	}
 	log.Debug("*********************************Aborting(In Abort method migration.go)********************************************")
