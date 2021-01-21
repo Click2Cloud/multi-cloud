@@ -325,7 +325,8 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
 				if err == nil {
 					progress(job, currPartSize, WT_MOVE)
-					log.Println("updated progress with part number######>>>", partNumber, obj.ObjectKey)
+					partNo++
+					log.Println("updated progress with part number*****>>>", partNumber, obj.ObjectKey)
 				}
 				completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
 				completeParts = append(completeParts, completePart)
@@ -351,7 +352,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			}
 
 			if err == nil {
-				partNo++
+				//partNo++
 				log.Debugln("copy part succeed")
 				break
 			} else {
