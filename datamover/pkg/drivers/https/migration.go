@@ -284,7 +284,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			break
 		}
 		if status1 == PAUSED {
-			err = errors.New(PAUSED)
+			err = nil
 			break
 		}
 
@@ -337,7 +337,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 					db.DbAdapter.UpdateJob(job)
 					log.Debugln("aborted--->>", try)
 				}
-				return errors.New(job.Status)
 				break
 			} else if status2 == PAUSED {
 				if job.Status != PAUSED {
@@ -347,7 +346,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 					db.DbAdapter.UpdateJob(job)
 					log.Debugln("paused--->>", try)
 				}
-				return errors.New(job.Status)
 				break
 			}
 
@@ -599,6 +597,7 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 	} else {
 		//When Object Size is greater than 5Mb
 		err = MultipartCopyObj(ctx, obj, destLoc, job)
+		log.Println("err status while paused", err)
 	}
 
 	if err != nil {
@@ -627,7 +626,7 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 		log.Info(" CAPACITY  bcapa(capa)=%d\n", len(capa))
 		capa <- obj.Size
 		log.Info(" CAPACITY  Acapa(capa)=%d\n", len(capa))
-		log.Debug("update progress in migration", obj.ObjectKey, obj.Size)
+		log.Debug("update progress in migration11111", obj.ObjectKey, obj.Size)
 		progress(job, obj.Size, WT_DELETE)
 
 	} else {
