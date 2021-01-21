@@ -284,7 +284,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			break
 		}
 		if status1 == PAUSED {
-			err = nil
+			err = errors.New(PAUSED)
 			break
 		}
 
@@ -337,6 +337,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 					db.DbAdapter.UpdateJob(job)
 					log.Debugln("aborted--->>", try)
 				}
+				return errors.New(job.Status)
 				break
 			} else if status2 == PAUSED {
 				if job.Status != PAUSED {
@@ -346,6 +347,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 					db.DbAdapter.UpdateJob(job)
 					log.Debugln("paused--->>", try)
 				}
+				return errors.New(job.Status)
 				break
 			}
 
