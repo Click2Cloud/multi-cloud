@@ -264,6 +264,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		if job.ObjList[m].ObjKey == obj.ObjectKey && job.ObjList[m].PartNo != 0 {
 			partNo = job.ObjList[m].PartNo
 			uploadId = job.ObjList[m].UploadId
+			log.Println("Resumed from part no", partNo, "   ", job.ObjList[m].PartNo)
 			log.Printf("[INFO] MIGRATION RESUMING objKey:%s \n", obj.ObjectKey)
 			log.Print("GOT PART NO for ", job.ObjList[m].ObjKey, job.ObjList[m].UploadId, job.ObjList[m])
 			resMultipart = true
@@ -350,6 +351,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			}
 
 			if err == nil {
+				partNo++
 				log.Debugln("copy part succeed")
 				break
 			} else {
