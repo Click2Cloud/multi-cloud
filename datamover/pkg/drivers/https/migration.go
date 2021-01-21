@@ -213,9 +213,10 @@ func CopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, jo
 	_, err := s3client.CopyObject(ctx, req, opt)
 	if err != nil {
 		log.Errorf("copy object[%s] failed, err:%v\n", obj.ObjectKey, err)
+	} else {
+		progress(job, obj.Size, WT_MOVE)
+		log.Debug("progress in copy object", obj.ObjectKey)
 	}
-
-	progress(job, obj.Size, WT_MOVE)
 
 	return err
 }
@@ -321,6 +322,10 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
 			if status2 != ABORTED || status2 != PAUSED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
+				if err == nil {
+					progress(job, currPartSize, WT_MOVE)
+					log.Println("updated progress with part number====>>>", partNumber, obj.ObjectKey)
+				}
 				completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
 				completeParts = append(completeParts, completePart)
 
@@ -363,11 +368,10 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		log.Println(rsp, "  Etag  ", rsp.Etag)
 
 		// update job progress
-		status3 := jobstate[job.Id.Hex()]
-		if err == nil && status3 != ABORTED && status3 != PAUSED {
-			log.Debugln("update job")
-			progress(job, currPartSize, WT_MOVE)
-		}
+		//if err == nil && status3 != ABORTED && status3 != PAUSED {
+		//	log.Debugln("update job")
+		//	progress(job, currPartSize, WT_MOVE)
+		//}
 		resMultipart = false
 	}
 	for j := range job.ObjList {
@@ -621,6 +625,7 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 		log.Info(" CAPACITY  bcapa(capa)=%d\n", len(capa))
 		capa <- obj.Size
 		log.Info(" CAPACITY  Acapa(capa)=%d\n", len(capa))
+		log.Debug("update progress in migration", obj.ObjectKey, obj.Size)
 		progress(job, obj.Size, WT_DELETE)
 
 	} else {
