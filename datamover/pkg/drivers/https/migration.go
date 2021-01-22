@@ -46,8 +46,8 @@ var bkendclient backend.BackendService
 var MiniSpeed int64 = 5 // 5KByte/Sec
 var jobstate = make(map[string]string)
 
-const WT_MOVE = 96
-const WT_DELETE = 4
+//const WT_MOVE = 96
+//const WT_DELETE = 4
 const JobType = "migration"
 
 var (
@@ -213,9 +213,10 @@ func CopyObj(ctx context.Context, obj *osdss3.Object, destLoca *LocationInfo, jo
 	_, err := s3client.CopyObject(ctx, req, opt)
 	if err != nil {
 		log.Errorf("copy object[%s] failed, err:%v\n", obj.ObjectKey, err)
+	} else {
+		//progress(job, obj.Size, WT_MOVE)
+		log.Debug("progress in copy object", obj.ObjectKey)
 	}
-
-	progress(job, obj.Size, WT_MOVE)
 
 	return err
 }
@@ -263,6 +264,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		if job.ObjList[m].ObjKey == obj.ObjectKey && job.ObjList[m].PartNo != 0 {
 			partNo = job.ObjList[m].PartNo
 			uploadId = job.ObjList[m].UploadId
+			log.Println("Resumed from part no", partNo, "   ", job.ObjList[m].PartNo)
 			log.Printf("[INFO] MIGRATION RESUMING objKey:%s \n", obj.ObjectKey)
 			log.Print("GOT PART NO for ", job.ObjList[m].ObjKey, job.ObjList[m].UploadId, job.ObjList[m])
 			resMultipart = true
@@ -321,6 +323,11 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
 			if status2 != ABORTED || status2 != PAUSED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
+				//if err == nil {
+				//	//progress(job, currPartSize, WT_MOVE)
+				//	//partNo++ todo object restarting to upload while pause
+				//	log.Println("updated progress with part number*****>>>", partNumber, obj.ObjectKey)
+				//}
 				completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
 				completeParts = append(completeParts, completePart)
 
@@ -345,6 +352,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			}
 
 			if err == nil {
+				//partNo++
 				log.Debugln("copy part succeed")
 				break
 			} else {
@@ -363,11 +371,10 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		log.Println(rsp, "  Etag  ", rsp.Etag)
 
 		// update job progress
-		status3 := jobstate[job.Id.Hex()]
-		if err == nil && status3 != ABORTED && status3 != PAUSED {
-			log.Debugln("update job")
-			progress(job, currPartSize, WT_MOVE)
-		}
+		//if err == nil && status3 != ABORTED && status3 != PAUSED {
+		//	log.Debugln("update job")
+		//	progress(job, currPartSize, WT_MOVE)
+		//}
 		resMultipart = false
 	}
 	for j := range job.ObjList {
@@ -593,6 +600,7 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 	} else {
 		//When Object Size is greater than 5Mb
 		err = MultipartCopyObj(ctx, obj, destLoc, job)
+		log.Println("err status while paused", err)
 	}
 
 	if err != nil {
@@ -621,7 +629,8 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 		log.Info(" CAPACITY  bcapa(capa)=%d\n", len(capa))
 		capa <- obj.Size
 		log.Info(" CAPACITY  Acapa(capa)=%d\n", len(capa))
-		progress(job, obj.Size, WT_DELETE)
+		log.Debug("update progress in migration11111", obj.ObjectKey, obj.Size)
+		//progress(job, obj.Size, WT_DELETE)
 
 	} else {
 		var t int
@@ -822,8 +831,8 @@ func runjob(in *pb.RunJobRequest) error {
 
 				//update database
 				j.PassedCount = passedCount
-				///j.PassedCapacity = capacity
-				//j.Progress = int64((float32(capacity) / float32(totalcapacity)) * 100)
+				j.PassedCapacity = capacity
+				j.Progress = int64((float32(capacity) / float32(totalcapacity)) * 100)
 				log.Infof("ObjectMigrated:%d,TotalCapacity:%d Progress:%d\n", j.PassedCount, j.TotalCapacity, j.Progress)
 				log.Println("This is progress=>", j.Progress, "This is totalcapacity=>", totalcapacity, "This is passedcapacity=>", j.PassedCapacity)
 				updateJob(&j)
@@ -880,17 +889,17 @@ func runjob(in *pb.RunJobRequest) error {
 }
 
 //To calculate Progress of migration process
-func progress(job *flowtype.Job, size int64, wt float64) {
-	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
-	log.Println(job.MigratedCapacity, "this is new log for migrated capacity", size, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", wt)
-	MigratedCapacity := float64(job.PassedCapacity) + float64(size)*(wt/100)
-	log.Println(MigratedCapacity, "new migration capacity")
-	job.PassedCapacity = int64(math.Round(MigratedCapacity*100) / 100)
-	//job.Progress = int64(((size)*(wt/100) + job.PassedCapacity*100) / job.TotalCapacity)
-	job.Progress = int64((float64(job.PassedCapacity) / float64(job.TotalCapacity)) * 100)
-	log.Debugf("Progress %d, MigratedCapacity %d, TotalCapacity %d\n", job.Progress, job.MigratedCapacity, job.TotalCapacity)
-	db.DbAdapter.UpdateJob(job)
-}
+//func progress(job *flowtype.Job, size int64, wt float64) {
+//	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
+//	log.Println(job.MigratedCapacity, "this is new log for migrated capacity", size, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", wt)
+//	MigratedCapacity := float64(job.PassedCapacity) + float64(size)*(wt/100)
+//	log.Println(MigratedCapacity, "new migration capacity")
+//	job.PassedCapacity = int64(math.Round(MigratedCapacity*100) / 100)
+//	//job.Progress = int64(((size)*(wt/100) + job.PassedCapacity*100) / job.TotalCapacity)
+//	job.Progress = int64((float64(job.PassedCapacity) / float64(job.TotalCapacity)) * 100)
+//	log.Debugf("Progress %d, MigratedCapacity %d, TotalCapacity %d\n", job.Progress, job.MigratedCapacity, job.TotalCapacity)
+//	db.DbAdapter.UpdateJob(job)
+//}
 
 func Abort(jobId string) (string, error) {
 	j := flowtype.Job{Id: bson.ObjectIdHex(jobId)}
