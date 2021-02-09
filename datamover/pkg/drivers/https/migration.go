@@ -327,9 +327,9 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 					//	//progress(job, currPartSize, WT_MOVE)
 					partNo++ //todo object restarting to upload while pause
 					log.Println("updated progress with part number*****>>>", partNumber, obj.ObjectKey)
+					completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
+					completeParts = append(completeParts, completePart)
 				}
-				completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
-				completeParts = append(completeParts, completePart)
 
 			} else if status2 == ABORTED {
 				if job.Status != ABORTED {
