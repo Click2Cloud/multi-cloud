@@ -262,7 +262,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	currPartSize := PART_SIZE
 	for m := range job.ObjList {
 		if job.ObjList[m].ObjKey == obj.ObjectKey && job.ObjList[m].PartNo != 0 {
-			partNo = job.ObjList[m].PartNo
+			partNo = job.ObjList[m].PartNo + 1
 			uploadId = job.ObjList[m].UploadId
 			log.Println("Resumed from part no", partNo, "   ", job.ObjList[m].PartNo)
 			log.Printf("[INFO] MIGRATION RESUMING objKey:%s \n", obj.ObjectKey)
@@ -323,11 +323,11 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			log.Debugf("###copy object part, objkey=%s, uploadid=%s, offset=%d, lenth=%d\n", obj.ObjectKey, uploadId, offset, currPartSize)
 			if status2 != ABORTED || status2 != PAUSED {
 				rsp, err = s3client.CopyObjPart(ctx, copyReq, opt)
-				//if err == nil {
-				//	//progress(job, currPartSize, WT_MOVE)
-				//	//partNo++ todo object restarting to upload while pause
-				//	log.Println("updated progress with part number*****>>>", partNumber, obj.ObjectKey)
-				//}
+				if err == nil {
+					//	//progress(job, currPartSize, WT_MOVE)
+					partNo++ //todo object restarting to upload while pause
+					log.Println("updated progress with part number*****>>>", partNumber, obj.ObjectKey)
+				}
 				completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
 				completeParts = append(completeParts, completePart)
 
