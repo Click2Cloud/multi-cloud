@@ -262,7 +262,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	currPartSize := PART_SIZE
 	for m := range job.ObjList {
 		if job.ObjList[m].ObjKey == obj.ObjectKey && job.ObjList[m].PartNo != 0 {
-			partNo = job.ObjList[m].PartNo + 1
+			partNo = job.ObjList[m].PartNo
 			uploadId = job.ObjList[m].UploadId
 			log.Println("Resumed from part no", partNo, "   ", job.ObjList[m].PartNo)
 			log.Printf("[INFO] MIGRATION RESUMING objKey:%s \n", obj.ObjectKey)
@@ -328,6 +328,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 					partNo++ //todo object restarting to upload while pause
 					log.Println("updated progress with part number*****>>>", partNumber, obj.ObjectKey)
 					completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
+					log.Println("Partno=>", partNumber, "etag :", rsp.Etag, "offset :", offset)
 					completeParts = append(completeParts, completePart)
 				}
 
@@ -369,12 +370,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		log.Debugf("copy part[obj=%s, uploadId=%s, ReadOffset=%d, ReadLength=%d] succeed\n", obj.ObjectKey,
 			uploadId, offset, currPartSize)
 		log.Println(rsp, "  Etag  ", rsp.Etag)
-
-		// update job progress
-		//if err == nil && status3 != ABORTED && status3 != PAUSED {
-		//	log.Debugln("update job")
-		//	progress(job, currPartSize, WT_MOVE)
-		//}
 		resMultipart = false
 	}
 	for j := range job.ObjList {
