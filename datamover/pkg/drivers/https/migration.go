@@ -282,10 +282,12 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		status1 := jobstate[job.Id.Hex()]
 		if status1 == ABORTED {
 			err = errors.New(ABORTED)
+			db.DbAdapter.UpdateJob(job)
 			break
 		}
 		if status1 == PAUSED {
 			err = nil
+			db.DbAdapter.UpdateJob(job)
 			break
 		}
 
@@ -330,6 +332,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 					completePart := &osdss3.CompletePart{PartNumber: partNumber, ETag: rsp.Etag}
 					log.Println("Partno=>", partNumber, "etag :", rsp.Etag, "offset :", offset)
 					completeParts = append(completeParts, completePart)
+					log.Println("list of parts:=>", completeParts)
 				}
 
 			} else if status2 == ABORTED {
@@ -408,6 +411,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			// this is for lifecycle management
 			completeReq.RequestType = s3utils.RequestType_Lifecycle
 		}
+		log.Println(completeParts, "<===complete multipart")
 		_, err = s3client.CompleteMultipartUpload(ctx, completeReq)
 		if err != nil {
 			log.Errorf("complete multipart copy failed, err:%v\n", err)
