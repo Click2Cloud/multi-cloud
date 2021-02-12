@@ -411,7 +411,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			// this is for lifecycle management
 			completeReq.RequestType = s3utils.RequestType_Lifecycle
 		}
-		log.Println(completeParts, "<===complete multipart")
+		log.Println(completeParts, "<===complete multipart  ", uploadId, "<===uploadid")
 		_, err = s3client.CompleteMultipartUpload(ctx, completeReq)
 		if err != nil {
 			log.Errorf("complete multipart copy failed, err:%v\n", err)
