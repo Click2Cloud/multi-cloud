@@ -291,7 +291,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			break
 		}
 
-		if partNumber == 1 || resMultipart == true {
+		if partNumber == 1 && resMultipart == true {
 			// init upload
 			rsp, err := s3client.InitMultipartUpload(ctx, &osdss3.InitMultiPartRequest{
 				BucketName: destLoca.BucketName,
