@@ -881,17 +881,17 @@ func runjob(in *pb.RunJobRequest) error {
 }
 
 //To calculate Progress of migration process
-func progress(job *flowtype.Job, size int64, wt float64) {
-	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
-	log.Println(job.MigratedCapacity, "this is new log for migrated capacity", size, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", wt)
-	MigratedCapacity := float64(job.PassedCapacity) + float64(size)*(wt/100)
-	log.Println(MigratedCapacity, "new migration capacity")
-	job.PassedCapacity = int64(math.Round(MigratedCapacity*100) / 100)
-	//job.Progress = int64(((size)*(wt/100) + job.PassedCapacity*100) / job.TotalCapacity)
-	job.Progress = int64((float64(job.PassedCapacity) / float64(job.TotalCapacity)) * 100)
-	log.Debugf("Progress %d, MigratedCapacity %d, TotalCapacity %d\n", job.Progress, job.MigratedCapacity, job.TotalCapacity)
-	db.DbAdapter.UpdateJob(job)
-}
+//func progress(job *flowtype.Job, size int64, wt float64) {
+//	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
+//	log.Println(job.MigratedCapacity, "this is new log for migrated capacity", size, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", wt)
+//	MigratedCapacity := float64(job.PassedCapacity) + float64(size)*(wt/100)
+//	log.Println(MigratedCapacity, "new migration capacity")
+//	job.PassedCapacity = int64(math.Round(MigratedCapacity*100) / 100)
+//	//job.Progress = int64(((size)*(wt/100) + job.PassedCapacity*100) / job.TotalCapacity)
+//	job.Progress = int64((float64(job.PassedCapacity) / float64(job.TotalCapacity)) * 100)
+//	log.Debugf("Progress %d, MigratedCapacity %d, TotalCapacity %d\n", job.Progress, job.MigratedCapacity, job.TotalCapacity)
+//	db.DbAdapter.UpdateJob(job)
+//}
 
 func Abort(jobId string) (string, error) {
 	j := flowtype.Job{Id: bson.ObjectIdHex(jobId)}
@@ -958,4 +958,13 @@ func SizeCalulator(obj *osdss3.Object) string {
 		return fmt.Sprint(byteobjectsize, " B")
 	}
 
+}
+func progress(job *flowtype.Job, size int64, wt float64) {
+	// Migrated Capacity = Old_migrated capacity + WT(Process)*Size of Object/100
+	MigratedCapacity := job.MigratedCapacity + float64(size)*(wt/100)
+	job.MigratedCapacity = math.Round(MigratedCapacity*100) / 100
+	// Progress = Migrated Capacity*100/ Total Capacity
+	job.Progress = int64(job.MigratedCapacity * 100 / float64(job.TotalCapacity))
+	log.Debugf("Progress %d, MigratedCapacity %d, TotalCapacity %d\n", job.Progress, job.MigratedCapacity, job.TotalCapacity)
+	db.DbAdapter.UpdateJob(job)
 }
