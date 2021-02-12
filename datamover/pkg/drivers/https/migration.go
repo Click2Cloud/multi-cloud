@@ -258,7 +258,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 	var initSucceed bool = false
 	var completeParts []*osdss3.CompletePart
 	var partNo int64 = 1
-	var resMultipart = false
 	currPartSize := PART_SIZE
 	for m := range job.ObjList {
 		if job.ObjList[m].ObjKey == obj.ObjectKey && job.ObjList[m].PartNo != 0 {
@@ -267,7 +266,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			log.Println("Resumed from part no", partNo, "   ", job.ObjList[m].PartNo)
 			log.Printf("[INFO] MIGRATION RESUMING objKey:%s \n", obj.ObjectKey)
 			log.Print("GOT PART NO for ", job.ObjList[m].ObjKey, job.ObjList[m].UploadId, job.ObjList[m])
-			resMultipart = true
 			break
 		}
 	}
@@ -291,7 +289,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			break
 		}
 
-		if partNumber == 1 && resMultipart == true {
+		if partNumber == 1 {
 			// init upload
 			rsp, err := s3client.InitMultipartUpload(ctx, &osdss3.InitMultiPartRequest{
 				BucketName: destLoca.BucketName,
@@ -373,7 +371,6 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 		log.Debugf("copy part[obj=%s, uploadId=%s, ReadOffset=%d, ReadLength=%d] succeed\n", obj.ObjectKey,
 			uploadId, offset, currPartSize)
 		log.Println(rsp, "  Etag  ", rsp.Etag)
-		resMultipart = false
 	}
 	for j := range job.ObjList {
 		//logger.Printf("job update Inside FOR LOOP objKey:%s PART: %d  \n", obj.ObjectKey, partNo)
