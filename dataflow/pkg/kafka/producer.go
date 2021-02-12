@@ -18,6 +18,7 @@ func Init(addrs []string) error {
 	config.Producer.Return.Errors = true
 	config.Version = sarama.V2_0_0_0
 	config.Admin.Timeout = 10 * time.Second
+	config.Metadata.Retry.Backoff = 2 * time.Second
 
 	var err error
 	Producer, err = sarama.NewSyncProducer(addrs, config)
