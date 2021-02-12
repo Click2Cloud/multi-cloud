@@ -353,6 +353,7 @@ func MultipartCopyObj(ctx context.Context, obj *osdss3.Object, destLoca *Locatio
 			}
 
 			if err == nil {
+				break
 			} else {
 				log.Warnf("copy part failed, err:%v\n", err)
 			}
