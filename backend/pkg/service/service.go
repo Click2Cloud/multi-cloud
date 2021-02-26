@@ -223,6 +223,10 @@ func (b *backendService) ListType(ctx context.Context, in *pb.ListTypeRequest, o
 			Name:        constants.BackendTypeOrange,
 			Description: "Orange OSS Object Storage",
 		},
+		{
+			Name:        constants.BackendTypeSony,
+			Description: "Sony_ODA Storage",
+		},
 	}
 
 	// Filter by name

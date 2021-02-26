@@ -27,4 +27,5 @@ const (
 	BackendTypeYIGS3     = "yig"
 	BackendTypeAlibaba   = "alibaba-oss"
 	BackendTypeOrange    = "orange"
+	BackendTypeSony      = "Sony-ODA"
 )
