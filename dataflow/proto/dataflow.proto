@@ -1,0 +1,212 @@
+syntax = "proto3";
+
+service DataFlow {
+	rpc GetPolicy(GetPolicyRequest) returns (GetPolicyResponse) {}
+	rpc ListPolicy(ListPolicyRequest) returns (ListPolicyResponse) {}
+	rpc CreatePolicy(CreatePolicyRequest) returns (CreatePolicyResponse) {}
+	rpc UpdatePolicy(UpdatePolicyRequest) returns (UpdatePolicyResponse) {}
+	rpc DeletePolicy(DeletePolicyRequest) returns (DeletePolicyResponse) {}
+	rpc GetPlan(GetPlanRequest) returns (GetPlanResponse) {}
+	rpc ListPlan(ListPlanRequest) returns (ListPlanResponse) {}
+	rpc CreatePlan(CreatePlanRequest) returns (CreatePlanResponse) {}
+	rpc UpdatePlan(UpdatePlanRequest) returns (UpdatePlanResponse) {}
+	rpc DeletePlan(DeletePlanRequest) returns (DeletePlanResponse) {}
+	rpc GetJob(GetJobRequest) returns (GetJobResponse) {}
+	rpc ListJob(ListJobRequest) returns (ListJobResponse) {}
+	rpc RunPlan(RunPlanRequest) returns (RunPlanResponse) {}
+}
+
+message Schedule {
+    string type = 1;
+	string  tiggerProperties = 2;
+}
+
+message Policy {
+	string id = 1;
+	string tenantId = 2;
+	string userId = 3;
+	string name = 4;
+	string tenant = 5;
+	string description = 6;
+	Schedule schedule = 7;
+}
+
+message GetPolicyRequest {
+	string id = 1;
+}
+
+message GetPolicyResponse {
+	string err = 1;
+	Policy policy = 2;
+}
+
+message ListPolicyRequest {
+}
+
+message ListPolicyResponse {
+    string err = 1;
+    repeated Policy policies = 2;
+}
+
+message CreatePolicyRequest {
+	Policy policy = 1;
+}
+
+message CreatePolicyResponse {
+	string err = 1;
+	Policy policy = 2;
+}
+
+message UpdatePolicyRequest {
+	string policyId = 1;
+	string body = 2;
+}
+
+message UpdatePolicyResponse {
+	string err = 1;
+	Policy policy = 2;
+}
+
+message DeletePolicyRequest {
+	string id = 1;
+}
+
+message DeletePolicyResponse {
+	string err = 1;
+}
+
+message KV {
+	string key = 1;
+	string value = 2;
+}
+
+
+message Filter {
+	string prefix = 1;
+	repeated KV tag = 2;
+}
+
+message Connector {
+	string storType = 1;
+	string bucketName = 2;
+	repeated KV connConfig = 3;
+}
+
+
+message Plan {
+	string id = 1;
+	string name = 2;
+	string description = 3;
+	string type = 4;
+	string policyId = 5;
+	string policyName = 6;
+	Connector sourceConn = 7;
+	Connector destConn = 8;
+	Filter filter = 9;
+	bool remainSource = 10;
+	string tenantId = 11;
+	string userId = 12;
+	bool policyEnabled = 13;
+}
+
+message CreatePlanRequest {
+	Plan plan = 1;
+}
+
+message CreatePlanResponse {
+	string err = 1;
+	Plan plan = 2;
+}
+
+message GetPlanRequest {
+	string id = 1;
+}
+
+message GetPlanResponse {
+	string err = 1;
+	Plan plan = 2;
+}
+
+message ListPlanRequest {
+	int32 limit = 1;
+	int32 offset = 2;
+	repeated string sortKeys = 3;
+	repeated string sortDirs = 4;
+	map<string, string> Filter = 5;
+}
+
+message ListPlanResponse {
+    repeated Plan plans = 1;
+	int32 next = 2;
+}
+
+message UpdatePlanRequest {
+    string planId = 1;
+	string body = 2;
+}
+
+message UpdatePlanResponse {
+	string err = 1;
+    Plan plan = 2;
+}
+
+message DeletePlanRequest {
+	string id = 1;
+}
+
+message DeletePlanResponse {
+	string err = 1;
+}
+
+message RunPlanRequest {
+	string id = 1;
+}
+
+message RunPlanResponse {
+	string err = 1;
+	string jobId = 2;
+}
+
+message Job {
+	string id = 1;
+	string tenantId = 2;
+	string userId = 3;
+	string type = 4;
+	string planName = 5;
+	string planId = 6;
+	string description = 7; //describe statistic information, such as total objs, finished objs
+	string sourceLocation = 8;
+	string destLocation = 9;
+	string status = 10;
+	int64  createTime = 11;
+	int64  startTime = 12;
+	int64  endTime = 13;
+	bool remainSource = 14;
+	int64 totalCapacity = 15;
+	int64 passedCapacity = 16;
+	int64 totalCount = 17;
+	int64 passedCount = 18;
+	int64 progress = 19;
+}
+
+message GetJobRequest {
+	string id = 1;
+}
+
+message GetJobResponse {
+	string err = 1;
+	Job job = 2;
+}
+
+message ListJobRequest {
+	int32 limit = 1;
+	int32 offset = 2;
+	repeated string sortKeys = 3;
+	repeated string sortDirs = 4;
+	map<string, string> Filter = 5;
+}
+
+message ListJobResponse {
+    repeated Job jobs = 1;
+	int32 next = 2;
+}
