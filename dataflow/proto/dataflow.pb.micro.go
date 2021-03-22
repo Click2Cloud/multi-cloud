@@ -11,7 +11,6 @@ import (
 
 import (
 	context "context"
-	api "github.com/micro/go-micro/v2/api"
 	client "github.com/micro/go-micro/v2/client"
 	server "github.com/micro/go-micro/v2/server"
 )
@@ -28,16 +27,9 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ api.Endpoint
 var _ context.Context
 var _ client.Option
 var _ server.Option
-
-// Api Endpoints for DataFlow service
-
-func NewDataFlowEndpoints() []*api.Endpoint {
-	return []*api.Endpoint{}
-}
 
 // Client API for DataFlow service
 
@@ -55,6 +47,8 @@ type DataFlowService interface {
 	GetJob(ctx context.Context, in *GetJobRequest, opts ...client.CallOption) (*GetJobResponse, error)
 	ListJob(ctx context.Context, in *ListJobRequest, opts ...client.CallOption) (*ListJobResponse, error)
 	RunPlan(ctx context.Context, in *RunPlanRequest, opts ...client.CallOption) (*RunPlanResponse, error)
+	ChangeStatus(ctx context.Context, in *ChangeStatusRequest, opts ...client.CallOption) (*ChangeStatusResponse, error)
+	ResumeJob(ctx context.Context, in *ResumeJobRequest, opts ...client.CallOption) (*ResumeJobResponse, error)
 }
 
 type dataFlowService struct {
@@ -199,6 +193,26 @@ func (c *dataFlowService) RunPlan(ctx context.Context, in *RunPlanRequest, opts 
 	return out, nil
 }
 
+func (c *dataFlowService) ChangeStatus(ctx context.Context, in *ChangeStatusRequest, opts ...client.CallOption) (*ChangeStatusResponse, error) {
+	req := c.c.NewRequest(c.name, "DataFlow.ChangeStatus", in)
+	out := new(ChangeStatusResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dataFlowService) ResumeJob(ctx context.Context, in *ResumeJobRequest, opts ...client.CallOption) (*ResumeJobResponse, error) {
+	req := c.c.NewRequest(c.name, "DataFlow.ResumeJob", in)
+	out := new(ResumeJobResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for DataFlow service
 
 type DataFlowHandler interface {
@@ -215,6 +229,8 @@ type DataFlowHandler interface {
 	GetJob(context.Context, *GetJobRequest, *GetJobResponse) error
 	ListJob(context.Context, *ListJobRequest, *ListJobResponse) error
 	RunPlan(context.Context, *RunPlanRequest, *RunPlanResponse) error
+	ChangeStatus(context.Context, *ChangeStatusRequest, *ChangeStatusResponse) error
+	ResumeJob(context.Context, *ResumeJobRequest, *ResumeJobResponse) error
 }
 
 func RegisterDataFlowHandler(s server.Server, hdlr DataFlowHandler, opts ...server.HandlerOption) error {
@@ -232,6 +248,8 @@ func RegisterDataFlowHandler(s server.Server, hdlr DataFlowHandler, opts ...serv
 		GetJob(ctx context.Context, in *GetJobRequest, out *GetJobResponse) error
 		ListJob(ctx context.Context, in *ListJobRequest, out *ListJobResponse) error
 		RunPlan(ctx context.Context, in *RunPlanRequest, out *RunPlanResponse) error
+		ChangeStatus(ctx context.Context, in *ChangeStatusRequest, out *ChangeStatusResponse) error
+		ResumeJob(ctx context.Context, in *ResumeJobRequest, out *ResumeJobResponse) error
 	}
 	type DataFlow struct {
 		dataFlow
@@ -294,4 +312,12 @@ func (h *dataFlowHandler) ListJob(ctx context.Context, in *ListJobRequest, out *
 
 func (h *dataFlowHandler) RunPlan(ctx context.Context, in *RunPlanRequest, out *RunPlanResponse) error {
 	return h.DataFlowHandler.RunPlan(ctx, in, out)
+}
+
+func (h *dataFlowHandler) ChangeStatus(ctx context.Context, in *ChangeStatusRequest, out *ChangeStatusResponse) error {
+	return h.DataFlowHandler.ChangeStatus(ctx, in, out)
+}
+
+func (h *dataFlowHandler) ResumeJob(ctx context.Context, in *ResumeJobRequest, out *ResumeJobResponse) error {
+	return h.DataFlowHandler.ResumeJob(ctx, in, out)
 }

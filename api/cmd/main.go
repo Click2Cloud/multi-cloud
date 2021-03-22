@@ -15,6 +15,7 @@
 package main
 
 import (
+	"github.com/opensds/multi-cloud/api/pkg/datamover"
 	"os"
 
 	"github.com/emicklei/go-restful"
@@ -67,6 +68,7 @@ func main() {
 
 		backend.RegisterRouter(ws)
 		dataflow.RegisterRouter(ws)
+		datamover.RegisterRouter(ws)
 		block.RegisterRouter(ws)
 		file.RegisterRouter(ws)
 		// add filter for authentication context

@@ -746,3 +746,117 @@ func (ad *adapter) ListJob(ctx context.Context, limit int, offset int, query int
 	}
 	return jobs, nil
 }
+func (ad *adapter) ChangeStatus(jobId string, status string) error {
+	var err error
+	ss := ad.s.Copy()
+	defer ss.Close()
+	c := ss.DB(DataBaseName).C(CollJob)
+	j := Job{}
+	err = c.Find(bson.M{"_id": bson.ObjectIdHex(jobId)}).One(&j)
+	if err != nil {
+		log.Errorf("Get job[id:%v] failed before update it, err:%v\n", jobId, err)
+
+		return errors.New("Change status failed  before update it.")
+	}
+
+	j.EndTime = time.Now()
+	j.Status = status
+
+	err = c.Update(bson.M{"_id": j.Id}, &j)
+	if err != nil {
+		log.Errorf("Update job in database failed, err:%v\n", err)
+		return errors.New("change status in database failed.")
+	}
+
+	log.Info("change status in database succeed.")
+	return nil
+}
+func (ad *adapter) UpdateJob(job *Job) error {
+	//	ss := ad.s.Copy()
+
+	log.Println("in update job ####################")
+	ss := ad.s.New()
+	ad.s.New()
+	defer ss.Close()
+
+	c := ss.DB(DataBaseName).C(CollJob)
+	j := Job{}
+	err := c.Find(bson.M{"_id": job.Id}).One(&j)
+	if err != nil {
+		log.Errorf("Get job[id:%v] failed before update it, err:%v\n", job.Id, err)
+
+		return errors.New("Get job failed before update it.")
+	}
+
+	if !job.StartTime.IsZero() {
+		j.StartTime = job.StartTime
+	}
+	if !job.EndTime.IsZero() {
+		j.EndTime = job.EndTime
+	}
+	if job.TotalCapacity != 0 {
+		j.TotalCapacity = job.TotalCapacity
+	}
+	if job.TotalCount != 0 {
+		j.TotalCount = job.TotalCount
+	}
+	if job.PassedCount != 0 {
+		j.PassedCount = job.PassedCount
+	}
+	if job.PassedCapacity != 0 {
+		j.PassedCapacity = job.PassedCapacity
+	}
+	if job.Status != "" {
+		j.Status = job.Status
+	}
+	if job.Progress != 0 {
+		j.Progress = job.Progress
+	}
+	if job.MigratedCapacity != 0 {
+		j.MigratedCapacity = job.MigratedCapacity
+	}
+	if job.TimeRequired != 0 {
+		j.TimeRequired = job.TimeRequired
+	}
+	if job.TimeRequired == 0 {
+		j.TimeRequired = 0
+	}
+	if job.Msg != "" {
+		j.Msg = job.Msg
+	} else {
+		job.Msg = j.Msg
+	}
+	if j.Msg != "" {
+		job.Msg = j.Msg
+	}
+	if job.TimesResumed != 0 {
+		j.TimesResumed = job.TimesResumed
+	}
+	if job.ObjList != nil {
+		j.ObjList = job.ObjList
+		log.Println(j.ObjList, "In update ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+	}
+
+	err = c.Update(bson.M{"_id": j.Id}, &j)
+	if err != nil {
+		log.Errorf("Update job in database failed, err:%v\n", err)
+		return errors.New("Update job in database failed.")
+	}
+
+	log.Info("Update job in database succeed.")
+	return nil
+}
+func (ad *adapter) GetJobStatus(jobID string) string {
+	job := Job{}
+	var err error
+	ss := ad.s.Copy()
+	defer ss.Close()
+	c := ss.DB(DataBaseName).C(CollJob)
+	err = c.Find(bson.M{"_id": bson.ObjectIdHex(jobID)}).One(&job)
+	if err != nil {
+		log.Errorf("Get job[ID#%s] failed:%v.\n", jobID, err)
+		return ""
+	}
+
+	return job.Status
+}

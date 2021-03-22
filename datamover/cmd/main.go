@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+	pb "github.com/opensds/multi-cloud/datamover/proto"
 
 	"github.com/micro/go-micro/v2"
 	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
@@ -33,7 +34,7 @@ func main() {
 	service.Init()
 
 	datamover.InitDatamoverService()
-	//pb.RegisterDatamoverHandler(service.Server(), handler.NewDatamoverService())
+	pb.RegisterDatamoverHandler(service.Server(), datamover.NewDatamoverService())
 	if err := service.Run(); err != nil {
 		fmt.Println(err)
 	}

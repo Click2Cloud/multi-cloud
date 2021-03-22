@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/micro/go-micro/v2/client"
@@ -45,8 +46,17 @@ func MoveObj(obj *osdss3.Object, targetLoc *LocationInfo, tmout time.Duration) e
 		SrcObjectVersion: obj.VersionId,
 		SrcBucket:        obj.BucketName,
 		TargetLocation:   targetLoc.BakendName,
+		TargetBucket:     targetLoc.BakendName,
 		TargetTier:       targetLoc.Tier,
-		MoveType:         utils.MoveType_ChangeLocation,
+		MoveType:         utils.MoveType_MoveCrossBuckets,
+	}
+	if InProgressObjs == nil {
+		var mutex sync.Mutex
+		mutex.Lock()
+		if InProgressObjs == nil {
+			InProgressObjs = make(map[string]struct{})
+		}
+		mutex.Unlock()
 	}
 	opt := client.WithRequestTimeout(tmout)
 	_, err := s3client.MoveObject(ctx, req, opt)
@@ -63,8 +73,15 @@ func MoveObj(obj *osdss3.Object, targetLoc *LocationInfo, tmout time.Duration) e
 func MultipartMoveObj(obj *osdss3.Object, targetLoc *LocationInfo, partSize int64, tmout time.Duration) error {
 	ctx, _ := context.WithTimeout(context.Background(), tmout)
 	ctx = metadata.NewContext(ctx, map[string]string{common.CTX_KEY_IS_ADMIN: strconv.FormatBool(true)})
-
-	err := migration.MultipartCopyObj(ctx, obj, targetLoc, nil)
+	if InProgressObjs == nil {
+		var mutex sync.Mutex
+		mutex.Lock()
+		if InProgressObjs == nil {
+			InProgressObjs = make(map[string]struct{})
+		}
+		mutex.Unlock()
+	}
+	err := migration.MultipartCopyObjLifecycle(ctx, obj, targetLoc, nil)
 	if err != nil {
 		log.Errorf("multipart move object[] failed, err:%v\n", err)
 	}
@@ -81,6 +98,14 @@ func doCrossCloudTransition(acReq *datamover.LifecycleActionRequest) error {
 	log.Infof("transition object[%s] from [%+s] to [%+s]\n", acReq.ObjKey, acReq.SourceBackend, acReq.TargetBackend)
 	obj := &osdss3.Object{ObjectKey: acReq.ObjKey, Size: acReq.ObjSize, BucketName: acReq.BucketName,
 		Tier: acReq.SourceTier, VersionId: acReq.VersionId}
+	if InProgressObjs == nil {
+		var mutex sync.Mutex
+		mutex.Lock()
+		if InProgressObjs == nil {
+			InProgressObjs = make(map[string]struct{})
+		}
+		mutex.Unlock()
+	}
 
 	// add object to InProgressObjs
 	if _, ok := InProgressObjs[obj.ObjectKey]; !ok {

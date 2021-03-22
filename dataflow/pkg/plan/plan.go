@@ -383,3 +383,72 @@ func (p *TriggerExecutor) Run() {
 		log.Errorf("PlanExcutor run plan(%s) error, jobid:%s, error:%v", p.planId, jobId, err)
 	}
 }
+func Resume(planId, tenantId, userId string) (*Job, error) {
+	ctx := metadata.NewContext(context.Background(), map[string]string{
+		common.CTX_KEY_USER_ID:   userId,
+		common.CTX_KEY_TENANT_ID: tenantId,
+	})
+	//Get information from database
+	// Get plan id from job id
+	job, err := db.DbAdapter.GetJob(ctx, planId)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO CHECK STATUS OF JOB
+	// TODO CHECK IF NOT EQUAL TO PAUSE RETURN ERROR
+	// If job is already finished or failed it can not be resumed
+	if job.Status == JOB_STATUS_SUCCEED {
+		return nil, errors.New("Job already finished")
+	}
+
+	if job.Status != JOB_STATUS_HOLD {
+		return job, errors.New("Job can not be resumed")
+	}
+
+	//
+	plan, err := db.DbAdapter.GetPlan(ctx, job.PlanId)
+	if err != nil {
+		return job, err
+	}
+
+	//scheduling must be mutual excluded among several schedulers
+	//Get Lock
+	ret := db.DbAdapter.LockSched(tenantId, string(plan.Id.Hex()))
+	for i := 0; i < 3; i++ {
+		if ret == LockSuccess {
+			//Make sure unlock before return
+			defer db.DbAdapter.UnlockSched(tenantId, string(plan.Id.Hex()))
+			break
+		} else if ret == LockBusy {
+			return nil, ERR_RUN_PLAN_BUSY
+		} else {
+			//Try to lock again, try three times at most
+			ret = db.DbAdapter.LockSched(tenantId, string(plan.Id.Hex()))
+		}
+	}
+
+	//TODO: change to send job to datamover by kafka
+	//This way send job is the temporary
+
+	filt := datamover.Filter{Prefix: plan.Filter.Prefix}
+	req := datamover.RunJobRequest{
+		Id: job.Id.Hex(), TenanId: tenantId, UserId: userId,
+		RemainSource: plan.RemainSource, Filt: &filt,
+	}
+	srcConn := datamover.Connector{Type: plan.SourceConn.StorType}
+	buildConn(&srcConn, &plan.SourceConn)
+	req.SourceConn = &srcConn
+	destConn := datamover.Connector{Type: plan.DestConn.StorType}
+	buildConn(&destConn, &plan.DestConn)
+	req.DestConn = &destConn
+	req.RemainSource = job.RemainSource
+	log.Print(job.RemainSource, "in remume **********")
+	job.Status = JOB_STATUS_RESUME
+	log.Println(job, "job check ^^^^^^++++++++++++++^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", req, "check request **************")
+	db.DbAdapter.UpdateJob(job)
+
+	go sendJob(&req)
+
+	return job, nil
+}

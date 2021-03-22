@@ -1,8 +1,28 @@
 syntax = "proto3";
-
+option go_package = ".;datamover";
 service datamover {
 	rpc Runjob(RunJobRequest) returns (RunJobResponse) {}
 	rpc DoLifecycleAction(LifecycleActionRequest) returns (LifecycleActionResonse) {}
+	rpc AbortJob(AbortJobRequest) returns (AbortJobResponse) {}
+	rpc PauseJob(PauseJobRequest)returns (PauseJobResponse){}
+}
+message AbortJobRequest {
+	string id = 1;
+}
+
+message AbortJobResponse {
+	string err = 1;
+	string id = 2;
+	string status = 3;
+}
+message PauseJobRequest{
+	string id = 1;
+}
+
+message PauseJobResponse{
+	string err = 1;
+	string id = 2;
+	string status = 3;
 }
 
 message KV {
