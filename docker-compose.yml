@@ -97,7 +97,7 @@ services:
       - MICRO_REGISTRY=mdns
       - DB_HOST=datastore:27017
       - OS_AUTH_AUTHSTRATEGY=keystone
-      - OS_AUTH_URL=http://10.10.3.154/identity
+      - OS_AUTH_URL=http://192.168.3.26/identity
       - OS_USER_DOMIN_ID=Default
       - OS_USERNAME=opensds
       - OS_PASSWORD=opensds@123
