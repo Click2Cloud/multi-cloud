@@ -91,7 +91,7 @@ func (ad *AlibabaAdapter) ParseTag(tagParsed []ecs.CreateDiskTag) ([]*block.Tag,
 // volume functions
 func (ad *AlibabaAdapter) CreateVolume(ctx context.Context, volume *block.CreateVolumeRequest) (*block.CreateVolumeResponse, error) {
 
-	// Create a alibaba ecs client.
+	// Create a alibaba client.
 	svc := ad.Client
 
 	// we made tag of this type because alibaba request take this type of tag
