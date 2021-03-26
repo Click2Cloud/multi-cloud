@@ -32,14 +32,6 @@ type AlibabaAdapter struct {
 // utils
 func (ad *AlibabaAdapter) ParseVolume(volumeParsed *ecs.Disk) (*block.Volume, error) {
 
-	//var tags []*block.Tag
-	//for _, tag := range volumeParsed.Tags.Tag {
-	//	tags = append(tags, &block.Tag{
-	//		Key:   tag.TagKey,
-	//		Value: tag.TagValue,
-	//	})
-	//}
-
 	meta := make(map[string]interface{})
 	meta = map[string]interface{}{
 		VolumeId: &volumeParsed.DiskId,
@@ -91,10 +83,8 @@ func (ad *AlibabaAdapter) ParseTag(tagParsed []ecs.CreateDiskTag) ([]*block.Tag,
 // volume functions
 func (ad *AlibabaAdapter) CreateVolume(ctx context.Context, volume *block.CreateVolumeRequest) (*block.CreateVolumeResponse, error) {
 
-	// Create a alibaba client.
 	svc := ad.Client
 
-	// we made tag of this type because alibaba request take this type of tag
 	tags := []ecs.CreateDiskTag{}
 	for _, tag := range volume.Volume.Tags {
 		tags = append(tags, ecs.CreateDiskTag{
@@ -165,7 +155,6 @@ func (ad *AlibabaAdapter) GetVolume(ctx context.Context, volume *block.GetVolume
 
 	request := ecs.CreateDescribeDisksRequest()
 	volumeId := volume.Volume.Metadata.Fields[VolumeId].GetStringValue()
-	//volumeIds := []string{volumeId}
 
 	request.DiskIds = volumeId
 
