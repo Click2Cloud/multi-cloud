@@ -16,6 +16,7 @@ package model
 
 import (
 	"errors"
+	osdss3 "github.com/opensds/multi-cloud/s3/proto"
 	"time"
 
 	"github.com/globalsign/mgo"
@@ -37,10 +38,14 @@ var (
 )
 
 var (
-	JOB_STATUS_PENDING = "pending"
-	JOB_STATUS_RUNNING = "running"
-	JOB_STATUS_SUCCEED = "succeed"
-	JOB_STATUS_FAILED  = "failed"
+	JOB_STATUS_PENDING   = "pending"
+	JOB_STATUS_RUNNING   = "running"
+	JOB_STATUS_SUCCEED   = "succeed"
+	JOB_STATUS_FAILED    = "failed"
+	JOB_STATUS_ABORTED   = "aborted"
+	JOB_STATUS_CANCELLED = "cancelled"
+	JOB_STATUS_HOLD      = "paused"
+	JOB_STATUS_RESUME    = "resuming"
 )
 
 var (
@@ -61,6 +66,7 @@ var (
 	ERR_RUN_PLAN_BUSY       = errors.New("is scheduling")   //Plan is being scheduled
 	ERR_JOB_NOT_EXIST       = errors.New("job not exist")
 	ERR_PLAN_NOT_IN_TRIGGER = errors.New("specified plan is not in trigger")
+	ERR_JOB_COMPLETED       = errors.New("job already finished")
 )
 
 var (
@@ -127,6 +133,13 @@ type Plan struct {
 	TenantId      string    `json:"tenantId" bson:"tenantId"`
 	UserId        string    `json:"userId" bson:"userId"`
 }
+type ObjDet struct {
+	ObjKey   string                 `json:"objKey" bson:"objKey"`
+	UploadId string                 `json:"uploadId" bson:"uploadId"`
+	PartNo   int64                  `json:"partNo" bson:"partNo"`
+	Migrated bool                   `json:"migrated" bson:"migrated"`
+	PartTag  []*osdss3.CompletePart `json:"partTag" bson:"partTag"`
+}
 
 const (
 	TriggerTypeManual = "manual"
@@ -144,6 +157,7 @@ type Job struct {
 	TotalCapacity    int64         `json:"totalCapacity" bson:"totalCapacity"`
 	PassedCapacity   int64         `json:"passedCapacity" bson:"passedCapacity"`
 	MigratedCapacity float64       `json:"migratedCapacity" bson:"migratedCapacity"`
+	TimeRequired     int64         `json:"timeRequired" bson:"timeRequired"`
 	//when the plan related connector type is OPENSDS, then location should be bucket name
 	SourceLocation string    `json:"sourceLocation" bson:"sourceLocation"`
 	DestLocation   string    `json:"destLocation" bson:"destLocation"`
@@ -154,7 +168,10 @@ type Job struct {
 	Status         string    `json:"status" bson:"status"` //queueing,
 	TenantId       string    `json:"tenantId" bson:"tenantId"`
 	UserId         string    `json:"userId" bson:"userId"`
+	Msg            string    `json:"msg" bson:"msg"`
 	Progress       int64     `json:"progress" bson:"progress"`
+	ObjList        []ObjDet  `json:"objList" bson:"objList"`
+	TimesResumed   int64     `json:"timesResumed" bson:"timesResumed"`
 }
 
 type Backend struct {

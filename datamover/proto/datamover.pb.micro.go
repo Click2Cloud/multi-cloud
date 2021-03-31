@@ -11,7 +11,6 @@ import (
 
 import (
 	context "context"
-	api "github.com/micro/go-micro/v2/api"
 	client "github.com/micro/go-micro/v2/client"
 	server "github.com/micro/go-micro/v2/server"
 )
@@ -28,22 +27,17 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ api.Endpoint
 var _ context.Context
 var _ client.Option
 var _ server.Option
-
-// Api Endpoints for Datamover service
-
-func NewDatamoverEndpoints() []*api.Endpoint {
-	return []*api.Endpoint{}
-}
 
 // Client API for Datamover service
 
 type DatamoverService interface {
 	Runjob(ctx context.Context, in *RunJobRequest, opts ...client.CallOption) (*RunJobResponse, error)
 	DoLifecycleAction(ctx context.Context, in *LifecycleActionRequest, opts ...client.CallOption) (*LifecycleActionResonse, error)
+	AbortJob(ctx context.Context, in *AbortJobRequest, opts ...client.CallOption) (*AbortJobResponse, error)
+	PauseJob(ctx context.Context, in *PauseJobRequest, opts ...client.CallOption) (*PauseJobResponse, error)
 }
 
 type datamoverService struct {
@@ -78,17 +72,41 @@ func (c *datamoverService) DoLifecycleAction(ctx context.Context, in *LifecycleA
 	return out, nil
 }
 
+func (c *datamoverService) AbortJob(ctx context.Context, in *AbortJobRequest, opts ...client.CallOption) (*AbortJobResponse, error) {
+	req := c.c.NewRequest(c.name, "Datamover.AbortJob", in)
+	out := new(AbortJobResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *datamoverService) PauseJob(ctx context.Context, in *PauseJobRequest, opts ...client.CallOption) (*PauseJobResponse, error) {
+	req := c.c.NewRequest(c.name, "Datamover.PauseJob", in)
+	out := new(PauseJobResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Datamover service
 
 type DatamoverHandler interface {
 	Runjob(context.Context, *RunJobRequest, *RunJobResponse) error
 	DoLifecycleAction(context.Context, *LifecycleActionRequest, *LifecycleActionResonse) error
+	AbortJob(context.Context, *AbortJobRequest, *AbortJobResponse) error
+	PauseJob(context.Context, *PauseJobRequest, *PauseJobResponse) error
 }
 
 func RegisterDatamoverHandler(s server.Server, hdlr DatamoverHandler, opts ...server.HandlerOption) error {
 	type datamover interface {
 		Runjob(ctx context.Context, in *RunJobRequest, out *RunJobResponse) error
 		DoLifecycleAction(ctx context.Context, in *LifecycleActionRequest, out *LifecycleActionResonse) error
+		AbortJob(ctx context.Context, in *AbortJobRequest, out *AbortJobResponse) error
+		PauseJob(ctx context.Context, in *PauseJobRequest, out *PauseJobResponse) error
 	}
 	type Datamover struct {
 		datamover
@@ -107,4 +125,12 @@ func (h *datamoverHandler) Runjob(ctx context.Context, in *RunJobRequest, out *R
 
 func (h *datamoverHandler) DoLifecycleAction(ctx context.Context, in *LifecycleActionRequest, out *LifecycleActionResonse) error {
 	return h.DatamoverHandler.DoLifecycleAction(ctx, in, out)
+}
+
+func (h *datamoverHandler) AbortJob(ctx context.Context, in *AbortJobRequest, out *AbortJobResponse) error {
+	return h.DatamoverHandler.AbortJob(ctx, in, out)
+}
+
+func (h *datamoverHandler) PauseJob(ctx context.Context, in *PauseJobRequest, out *PauseJobResponse) error {
+	return h.DatamoverHandler.PauseJob(ctx, in, out)
 }
