@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = ".;datamover";
+
 service datamover {
 	rpc Runjob(RunJobRequest) returns (RunJobResponse) {}
 	rpc DoLifecycleAction(LifecycleActionRequest) returns (LifecycleActionResonse) {}
