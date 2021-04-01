@@ -84,9 +84,9 @@ type Filter struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Prefix string `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
-	Tag    []*KV  `protobuf:"bytes,2,rep,name=tag,proto3" json:"tag,omitempty"`
+	ObjectList    []string `protobuf:"bytes,2,rep,name=objectList,proto3" json:"objectList,omitempty"`
+	Prefix        string   `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	Tag           []*KV    `protobuf:"bytes,2,rep,name=tag,proto3" json:"tag,omitempty"`
 }
 
 func (x *Filter) Reset() {
