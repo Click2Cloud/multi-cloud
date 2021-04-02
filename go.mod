@@ -1,6 +1,5 @@
 module github.com/opensds/multi-cloud
 
-
 go 1.13
 
 require (
