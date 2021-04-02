@@ -9,6 +9,7 @@ require (
 	github.com/Azure/azure-storage-file-go v0.7.0
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Shopify/sarama v1.19.0
+	github.com/aliyun/alibaba-cloud-sdk-go v0.0.0-20190808125512-07798873deee
 	github.com/aliyun/aliyun-oss-go-sdk v2.0.8+incompatible
 	github.com/aws/aws-sdk-go v1.30.26
 	github.com/bsm/sarama-cluster v2.1.15+incompatible
