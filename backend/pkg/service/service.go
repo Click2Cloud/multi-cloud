@@ -239,6 +239,10 @@ func (b *backendService) ListType(ctx context.Context, in *pb.ListTypeRequest, o
 			Name:        constants.BackendTypeSonyODA,
 			Description: "Sony-ODA Object Storage",
 		},
+		{
+			Name:        constants.BackendTypeAlibabaBlock,
+			Description: "alibaba-block Object Storage",
+		},
 	}
 
 	// Filter by name
