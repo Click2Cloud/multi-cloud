@@ -241,7 +241,7 @@ func (b *backendService) ListType(ctx context.Context, in *pb.ListTypeRequest, o
 		},
 		{
 			Name:        constants.BackendTypeAlibabaBlock,
-			Description: "alibaba-block Object Storage",
+			Description: "alibaba-block Block Storage",
 		},
 	}
 
