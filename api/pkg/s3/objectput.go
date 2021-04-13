@@ -41,6 +41,7 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 	backendName := request.HeaderParameter(common.REQUEST_HEADER_BACKEND)
 	storageClass := request.HeaderParameter(common.REQUEST_HEADER_STORAGE_CLASS)
 	// Save metadata
+	var folderUpload bool = false
 	metadata := extractMetadataFromHeader(request.Request.Header)
 	if storageClass == "" {
 		log.Infof("The storage class is not provided")
@@ -51,6 +52,7 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 	url := request.Request.URL
 	if strings.HasSuffix(url.String(), "/") {
 		objectKey = objectKey + "/"
+		folderUpload = true
 	}
 	log.Infof("Received request: PUT object, objectkey=%s, bucketName=%s:",
 		objectKey, bucketName)
@@ -170,8 +172,15 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 	for !eof {
 		n, err := dataReader.Read(buf)
 		if err != nil && err != io.EOF {
-			log.Errorf("read error:%v\n", err)
-			break
+			if err == io.ErrUnexpectedEOF {
+				if folderUpload {
+					log.Debugln("Unfinished read for folder")
+					eof = true
+				}
+			} else {
+				log.Errorf("read error:%v\n", err)
+				break
+			}
 		}
 		if err == io.EOF {
 			log.Debugln("finished read")
