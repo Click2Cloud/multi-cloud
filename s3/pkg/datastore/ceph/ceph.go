@@ -348,13 +348,13 @@ func (ad *CephAdapter) BackendCheck(ctx context.Context, backendDetail *pb.Backe
 	}
 
 	log.Debug("Create sample bucket is successul")
-	//err = ad.BucketDelete(ctx, input)
-	//if err != nil {
-	//	log.Error("failed to delete sample bucket :", err)
-	//	return err
-	//}
+	err = ad.BucketDelete(ctx, input)
+	if err != nil {
+		log.Error("failed to delete sample bucket :", err)
+		return err
+	}
 
-	//log.Debug("Delete sample bucket is successful")
+	log.Debug("Delete sample bucket is successful")
 	return nil
 }
 
