@@ -40,10 +40,24 @@ type CephAdapter struct {
 }
 
 func (ad *CephAdapter) BucketDelete(ctx context.Context, in *pb.Bucket) error {
+	bucket := ad.session.NewBucket()
+	err := bucket.Remove(in.Name)
+	if err != nil {
+		log.Error("the Delete bucket failed in ceph service with err:%s", err.Error())
+		return err
+	}
+	log.Debug("The bucket:%s deleted successful in ceph", in.Name)
 	return nil
 }
 
 func (ad *CephAdapter) BucketCreate(ctx context.Context, input *pb.Bucket) error {
+	bucket := ad.session.NewBucket()
+	err := bucket.Create(input.Name, models.Private)
+	if err != nil {
+		log.Error("the create bucket failed in ceph service with err:%s", err.Error())
+		return err
+	}
+	log.Debug("The bucket:%s creation successful in ceph", input.Name)
 	return nil
 }
 
@@ -319,7 +333,7 @@ func (ad *CephAdapter) ListParts(ctx context.Context, multipartUpload *pb.ListPa
 }
 
 func (ad *CephAdapter) BackendCheck(ctx context.Context, backendDetail *pb.BackendDetailS3) error {
-    return ErrNotImplemented
+	return ErrNotImplemented
 }
 
 func (ad *CephAdapter) Restore(ctx context.Context, inp *pb.Restore) error {
