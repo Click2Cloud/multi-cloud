@@ -24,10 +24,8 @@ import (
 	"github.com/opensds/multi-cloud/api/pkg/block"
 	"github.com/opensds/multi-cloud/api/pkg/dataflow"
 	"github.com/opensds/multi-cloud/api/pkg/file"
-	"github.com/opensds/multi-cloud/api/pkg/filters/auth"
 	"github.com/opensds/multi-cloud/api/pkg/filters/context"
 	"github.com/opensds/multi-cloud/api/pkg/filters/logging"
-	"github.com/opensds/multi-cloud/api/pkg/filters/signature/signer"
 	"github.com/opensds/multi-cloud/api/pkg/s3"
 	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
 	log "github.com/sirupsen/logrus"
@@ -65,7 +63,7 @@ func main() {
 
 		s3ws.Filter(logging.FilterFactory())
 		s3ws.Filter(context.FilterFactory())
-		s3ws.Filter(signer.FilterFactory())
+		//s3ws.Filter(signer.FilterFactory())
 		s3.RegisterRouter(s3ws)
 		wc.Add(s3ws)
 	} else {
@@ -83,7 +81,7 @@ func main() {
 		// add filter for authentication context
 		ws.Filter(logging.FilterFactory())
 		ws.Filter(context.FilterFactory())
-		ws.Filter(auth.FilterFactory())
+		//ws.Filter(auth.FilterFactory())
 		wc.Add(ws)
 	}
 
