@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	uuid "github.com/satori/go.uuid"
 	"io"
 	"io/ioutil"
 	"time"
@@ -33,6 +34,8 @@ import (
 	. "github.com/webrtcn/s3client"
 	"github.com/webrtcn/s3client/models"
 )
+
+const sampleBucket string = "sample"
 
 type CephAdapter struct {
 	backend *backendpb.BackendDetail
@@ -333,7 +336,26 @@ func (ad *CephAdapter) ListParts(ctx context.Context, multipartUpload *pb.ListPa
 }
 
 func (ad *CephAdapter) BackendCheck(ctx context.Context, backendDetail *pb.BackendDetailS3) error {
-	return ErrNotImplemented
+	randId := uuid.NewV4().String()
+	input := &pb.Bucket{
+		Name: sampleBucket + randId,
+	}
+
+	err := ad.BucketCreate(ctx, input)
+	if err != nil {
+		log.Error("failed to create sample bucket :", err)
+		return err
+	}
+
+	log.Debug("Create sample bucket is successul")
+	err = ad.BucketDelete(ctx, input)
+	if err != nil {
+		log.Error("failed to delete sample bucket :", err)
+		return err
+	}
+
+	log.Debug("Delete sample bucket is successful")
+	return nil
 }
 
 func (ad *CephAdapter) Restore(ctx context.Context, inp *pb.Restore) error {
