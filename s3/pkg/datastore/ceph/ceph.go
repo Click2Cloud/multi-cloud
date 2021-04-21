@@ -65,8 +65,8 @@ func (ad *CephAdapter) BucketCreate(ctx context.Context, input *pb.Bucket) error
 }
 
 func (ad *CephAdapter) Put(ctx context.Context, stream io.Reader, object *pb.Object) (result dscommon.PutResult, err error) {
-	bucketName := ad.backend.BucketName
-	objectId := object.BucketName + "/" + object.ObjectKey
+	bucketName := object.BucketName
+	objectId := object.ObjectKey
 	log.Infof("put object[Ceph S3], bucket:%s, objectId:%s\n", bucketName, objectId)
 
 	userMd5 := dscommon.GetMd5FromCtx(ctx)
@@ -125,7 +125,7 @@ func (ad *CephAdapter) Get(ctx context.Context, object *pb.Object, start int64, 
 	}
 
 	bucket := ad.session.NewBucket()
-	cephObject := bucket.NewObject(ad.backend.BucketName)
+	cephObject := bucket.NewObject(object.BucketName)
 	getObject, err := cephObject.Get(object.ObjectId, &getObjectOption)
 	if err != nil {
 		fmt.Println(err)
@@ -139,10 +139,10 @@ func (ad *CephAdapter) Get(ctx context.Context, object *pb.Object, start int64, 
 
 func (ad *CephAdapter) Delete(ctx context.Context, object *pb.DeleteObjectInput) error {
 	bucket := ad.session.NewBucket()
-	objectId := object.Bucket + "/" + object.Key
+	objectId := object.Key
 	log.Infof("delete object[Ceph S3], objectId:%s, bucket:%s\n", objectId, bucket)
 
-	cephObject := bucket.NewObject(ad.backend.BucketName)
+	cephObject := bucket.NewObject(object.Bucket)
 	err := cephObject.Remove(objectId)
 	if err != nil {
 		log.Infof("delete object[Ceph S3] failed, objectId:%s, err:%v\n", objectId, err)
@@ -195,9 +195,9 @@ func (ad *CephAdapter) ChangeStorageClass(ctx context.Context, object *pb.Object
 
 func (ad *CephAdapter) InitMultipartUpload(ctx context.Context, object *pb.Object) (*pb.MultipartUpload, error) {
 	bucket := ad.session.NewBucket()
-	objectId := object.BucketName + "/" + object.ObjectKey
+	objectId := object.ObjectKey
 	log.Infof("init multipart upload[Ceph S3], bucket = %s,objectId = %v\n", bucket, objectId)
-	cephObject := bucket.NewObject(ad.backend.BucketName)
+	cephObject := bucket.NewObject(object.BucketName)
 	uploader := cephObject.NewUploads(objectId)
 	multipartUpload := &pb.MultipartUpload{}
 
@@ -220,7 +220,7 @@ func (ad *CephAdapter) UploadPart(ctx context.Context, stream io.Reader, multipa
 	bucket := ad.session.NewBucket()
 	log.Infof("upload part[Ceph S3], objectId:%s, bucket:%s\n", multipartUpload.ObjectId, bucket)
 
-	cephObject := bucket.NewObject(ad.backend.BucketName)
+	cephObject := bucket.NewObject(multipartUpload.Bucket)
 	uploader := cephObject.NewUploads(multipartUpload.ObjectId)
 
 	d, err := ioutil.ReadAll(stream)
@@ -249,7 +249,7 @@ func (ad *CephAdapter) CompleteMultipartUpload(ctx context.Context, multipartUpl
 	bucket := ad.session.NewBucket()
 	log.Infof("complete multipart upload[Ceph S3], objectId:%s, bucket:%s\n", multipartUpload.ObjectId, bucket)
 
-	cephObject := bucket.NewObject(ad.backend.BucketName)
+	cephObject := bucket.NewObject(multipartUpload.Bucket)
 	uploader := cephObject.NewUploads(multipartUpload.ObjectId)
 	var completeParts []CompletePart
 	for _, p := range completeUpload.Parts {
@@ -278,7 +278,7 @@ func (ad *CephAdapter) CompleteMultipartUpload(ctx context.Context, multipartUpl
 
 func (ad *CephAdapter) AbortMultipartUpload(ctx context.Context, multipartUpload *pb.MultipartUpload) error {
 	bucket := ad.session.NewBucket()
-	cephObject := bucket.NewObject(ad.backend.BucketName)
+	cephObject := bucket.NewObject(multipartUpload.Bucket)
 	uploader := cephObject.NewUploads(multipartUpload.ObjectId)
 	log.Infof("abort multipart upload[Ceph S3], objectId:%s, bucket:%s\n", multipartUpload.ObjectId, bucket)
 
