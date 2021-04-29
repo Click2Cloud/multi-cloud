@@ -112,7 +112,7 @@ func (ad *CephAdapter) Put(ctx context.Context, stream io.Reader, object *pb.Obj
 
 func (ad *CephAdapter) Get(ctx context.Context, object *pb.Object, start int64, end int64) (io.ReadCloser, error) {
 	log.Infof("get object[Ceph S3], bucket:%s, objectId:%s\n", object.BucketName, object.ObjectId)
-
+        log.Info("Start: ",start," End: ",end)
 	getObjectOption := GetObjectOption{}
 	if start != 0 || end != 0 {
 		rangeObj := Range{
