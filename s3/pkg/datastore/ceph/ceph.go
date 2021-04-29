@@ -134,6 +134,7 @@ func (ad *CephAdapter) Get(ctx context.Context, object *pb.Object, start int64, 
 	}
 
 	log.Infof("get object[Ceph S3] succeed, objectId:%s, bytes:%d\n", object.ObjectId, getObject.ContentLength)
+	log.Info("get object body:",getObject.Body)
 	return getObject.Body, nil
 }
 
