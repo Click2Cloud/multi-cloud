@@ -355,7 +355,7 @@ func (ad *CephAdapter) BackendCheck(ctx context.Context, backendDetail *pb.Backe
 		return err1
 	}
 	if bucketResp.Name == input.Name {
-		log.Debug("Create sample bucket is successul with name :")
+		log.Debug("Create sample bucket is successul")
 		err = ad.BucketDelete(ctx, input)
 		if err != nil {
 			log.Error("failed to delete sample bucket :", err)
