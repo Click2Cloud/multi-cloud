@@ -112,7 +112,7 @@ func (ad *CephAdapter) Put(ctx context.Context, stream io.Reader, object *pb.Obj
 
 func (ad *CephAdapter) Get(ctx context.Context, object *pb.Object, start int64, end int64) (io.ReadCloser, error) {
 	log.Infof("get object[Ceph S3], bucket:%s, objectId:%s\n", object.BucketName, object.ObjectId)
-        log.Info("Start: ",start," End: ",end)
+	log.Info("Start: ", start, " End: ", end)
 	getObjectOption := GetObjectOption{}
 	if start != 0 || end != 0 {
 		rangeObj := Range{
@@ -134,7 +134,7 @@ func (ad *CephAdapter) Get(ctx context.Context, object *pb.Object, start int64, 
 	}
 
 	log.Infof("get object[Ceph S3] succeed, objectId:%s, bytes:%d\n", object.ObjectId, getObject.ContentLength)
-	log.Info("get object body:",getObject.Body)
+	log.Info("get object body:", getObject.Body)
 	return getObject.Body, nil
 }
 
@@ -345,6 +345,19 @@ func (ad *CephAdapter) BackendCheck(ctx context.Context, backendDetail *pb.Backe
 	err := ad.BucketCreate(ctx, input)
 	if err != nil {
 		log.Error("failed to create sample bucket :", err)
+		return err
+	}
+	bucket := ad.session.NewBucket()
+	bucketResp, err1 := bucket.Get(input.Name, "", "", "", 1000)
+
+	if err1 != nil {
+		log.Infof("error occured during get bucket Info, err:%v\n", err)
+		return err1
+	}
+
+	log.Infof("BucketExist respone", bucketResp)
+	if err != nil {
+		log.Error("the Delete bucket failed in ceph service with err:%s", err.Error())
 		return err
 	}
 
