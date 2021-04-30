@@ -346,6 +346,19 @@ func (ad *CephAdapter) BackendCheck(ctx context.Context, backendDetail *pb.Backe
 		log.Error("failed to create sample bucket :", err)
 		return err
 	}
+	bucket := ad.session.NewBucket()
+	bucketResp, err1 := bucket.Get(input.Name, "", "", "", 1000)
+
+	if err1 != nil {
+		log.Infof("error occured during get bucket Info, err:%v\n", err)
+		return err1
+	}
+
+	log.Infof("BucketExist respone", bucketResp)
+	if err != nil {
+		log.Error("the Delete bucket failed in ceph service with err:%s", err.Error())
+		return err
+	}
 
 	log.Debug("Create sample bucket is successul")
 	err = ad.BucketDelete(ctx, input)
