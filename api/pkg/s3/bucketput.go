@@ -83,7 +83,7 @@ func (s *APIService) BucketPut(request *restful.Request, response *restful.Respo
 		}
 	}
 	if flag == false {
-		log.Errorf("default backend is not provided or it is not exist.")
+		log.Errorf("default backend is not provided or it is[' exist.")
 		WriteErrorResponse(response, request, s3error.ErrGetBackendFailed)
 		return
 	}
