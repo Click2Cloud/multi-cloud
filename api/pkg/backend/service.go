@@ -141,11 +141,11 @@ func (s *APIService) listBackendDefault(ctx context.Context, request *restful.Re
 		return
 	}
 
-	// do not return sensitive information
-	for _, v := range res.Backends {
-		v.Access = ""
-		v.Security = ""
-	}
+	// do not return sensitive information but in cb we need these information to sync with storagemanagement
+	//for _, v := range res.Backends {
+	//	v.Access = ""
+	//	v.Security = ""
+	//}
 
 	log.Info("List backends successfully.")
 	response.WriteEntity(res)
