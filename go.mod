@@ -39,9 +39,10 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/viper v1.6.3
+	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.5.1
 	github.com/ugorji/go/codec v1.1.7
+	github.com/vektra/mockery/v2 v2.7.5 // indirect
 	github.com/webrtcn/s3client v0.0.0-20200722082950-4e45a005eff3
 	github.com/xxtea/xxtea-go v0.0.0-20170828040851-35c4b17eecf6
 	go.uber.org/automaxprocs v1.3.0
