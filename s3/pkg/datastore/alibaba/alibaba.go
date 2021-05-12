@@ -139,7 +139,7 @@ func (ad *OSSAdapter) Get(ctx context.Context, object *pb.Object, start int64, e
 	log.Infof("bucket is %v\n", bucket)
 	log.Infof("object key %v    %v\n", object.ObjectKey, object.ObjectId)
 
-	objectId := object.BucketName + "/" + object.ObjectKey
+	objectId := object.ObjectKey
 	alibabaBucket, err := ad.client.Bucket(bucket)
 	if err != nil {
 		log.Errorf("Access bucket failed:%v", err)
