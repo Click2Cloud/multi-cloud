@@ -39,22 +39,20 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 	bucketName := request.PathParameter(common.REQUEST_PATH_BUCKET_NAME)
 	objectKey := request.PathParameter(common.REQUEST_PATH_OBJECT_KEY)
 	backendName := request.HeaderParameter(common.REQUEST_HEADER_BACKEND)
-	storageClass := request.HeaderParameter(common.REQUEST_HEADER_STORAGE_CLASS)
-	// Save metadata
+	tier, err1 := getTierFromHeader(request)
 	var folderUpload bool = false
-	metadata := extractMetadataFromHeader(request.Request.Header)
-	if storageClass == "" {
-		log.Infof("The storage class is not provided")
-	} else {
-		log.Infof("Storage class to be set for object is [%s]", storageClass)
-		metadata["storageClass"] = storageClass
+	if err1 != nil {
+		log.Errorf("failed to get storage class from http header. err:", err1)
+		WriteErrorResponse(response, request, err1)
+		return
 	}
+
 	url := request.Request.URL
 	if strings.HasSuffix(url.String(), "/") {
 		objectKey = objectKey + "/"
 		folderUpload = true
 	}
-	log.Infof("Received request: PUT object, objectkey=%s, bucketName=%s:",
+	log.Infof("received request: PUT object, objectkey=%s, bucketName=%s\n:",
 		objectKey, bucketName)
 
 	//var authType = signature.GetRequestAuthType(r)
@@ -69,6 +67,7 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 	if err != nil {
 		return
 	}
+
 	if size == -1 {
 		WriteErrorResponse(response, request, s3error.ErrMissingContentLength)
 		return
@@ -80,6 +79,8 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 		return
 	}
 
+	// Save metadata.
+	metadata := extractMetadataFromHeader(request.Request.Header)
 	// Get Content-Md5 sent by client and verify if valid
 	if _, ok := request.Request.Header["Content-Md5"]; !ok {
 		metadata["md5Sum"] = ""
@@ -142,6 +143,7 @@ func (s *APIService) ObjectPut(request *restful.Request, response *restful.Respo
 		Attrs:      metadata,
 		Location:   location,
 		Size:       size,
+		Tier:       int32(tier),
 	}
 	// add all header information, if any
 	obj.Headers = make(map[string]*pb.HeaderValues, len(request.Request.Header))

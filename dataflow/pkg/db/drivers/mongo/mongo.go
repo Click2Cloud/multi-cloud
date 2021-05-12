@@ -746,6 +746,7 @@ func (ad *adapter) ListJob(ctx context.Context, limit int, offset int, query int
 	}
 	return jobs, nil
 }
+
 func (ad *adapter) ChangeStatus(jobId string, status string) error {
 	var err error
 	ss := ad.s.Copy()

@@ -19,6 +19,10 @@ type LocationInfo struct {
 	BakendName string
 	ClassName  string
 	Tier       int32
+	Access     string
+	Security   string
+	Region     string
+	EndPoint   string
 }
 
 type BackendInfo struct {

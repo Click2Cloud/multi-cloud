@@ -39,7 +39,11 @@ const (
 	Tier99  = 99
 	Tier999 = 999
 )
-
+const (
+	ORANGE_STANDARD = "STANDARD"
+	ORANGE_WARM     = "WARM"
+	ORANGE_COLD     = "COLD"
+)
 const (
 	AWS_STANDARD    = "STANDARD"
 	AWS_STANDARD_IA = "STANDARD_IA"
@@ -75,6 +79,7 @@ const (
 	OSTYPE_CEPH          = "ceph-s3"
 	OSTYPE_FUSIONSTORAGE = "fusionstorage-object"
 	OSTYPE_ALIBABA       = "alibaba-oss"
+	OSTYPE_ORANGE        = "orange"
 )
 
 const (

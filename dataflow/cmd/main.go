@@ -16,32 +16,34 @@ package main
 
 import (
 	"github.com/micro/go-micro/v2"
+	"github.com/micro/go-micro/v2/registry"
+	"github.com/micro/go-plugins/registry/kubernetes/v2"
+	"github.com/micro/go-plugins/registry/mdns/v2"
+	"os"
+	"time"
+
+	//"github.com/micro/go-plugins/registry/kubernetes/v2"
 	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
 	handler "github.com/opensds/multi-cloud/dataflow/pkg"
 	"github.com/opensds/multi-cloud/dataflow/pkg/scheduler"
 	_ "github.com/opensds/multi-cloud/dataflow/pkg/scheduler/trigger/crontrigger"
 	pb "github.com/opensds/multi-cloud/dataflow/proto"
 	log "github.com/sirupsen/logrus"
-	"os"
-)
-
-const (
-	MICRO_ENVIRONMENT = "MICRO_ENVIRONMENT"
-	K8S               = "k8s"
-
-	dataflowService_Docker = "dataflow"
-	dataflowService_K8S    = "soda.multicloud.v1.dataflow"
 )
 
 func main() {
-	dataflowService := dataflowService_Docker
 
-	if os.Getenv(MICRO_ENVIRONMENT) == K8S {
-		dataflowService = dataflowService_K8S
+	regType := os.Getenv("MICRO_REGISTRY")
+	var reg registry.Registry
+	if regType == "mdns" {
+		reg = mdns.NewRegistry()
 	}
-
+	if regType == "kubernetes" {
+		reg = kubernetes.NewRegistry()
+	}
 	service := micro.NewService(
-		micro.Name(dataflowService),
+		micro.Name("dataflow"),
+		micro.Registry(reg),
 	)
 
 	obs.InitLogs()
@@ -50,6 +52,7 @@ func main() {
 	pb.RegisterDataFlowHandler(service.Server(), handler.NewDataFlowService())
 	scheduler.LoadAllPlans()
 	scheduler.LoadLifecycleScheduler()
+	time.Local, _ = time.LoadLocation("UTC")
 	if err := service.Run(); err != nil {
 		log.Info(err)
 	}

@@ -38,7 +38,7 @@ func NewAPIService(c client.Client) *APIService {
 func (s *APIService) AbortJob(request *restful.Request, response *restful.Response) {
 
 	id := request.PathParameter("id")
-	log.Info("Received request Abort migration\n", id)
+	log.Info("Received request Abort migration################################################################# \n", id)
 	ctx := context.Background()
 
 	res, err := s.datamoverClient.AbortJob(ctx, &datamover.AbortJobRequest{Id: id})

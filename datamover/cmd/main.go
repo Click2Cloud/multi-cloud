@@ -16,40 +16,37 @@ package main
 
 import (
 	"fmt"
+	"github.com/micro/go-micro/v2/registry"
+	"github.com/micro/go-plugins/registry/kubernetes/v2"
+	"github.com/micro/go-plugins/registry/mdns/v2"
 	pb "github.com/opensds/multi-cloud/datamover/proto"
+	"os"
+	"time"
 
 	"github.com/micro/go-micro/v2"
 	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
 	datamover "github.com/opensds/multi-cloud/datamover/pkg"
 	log "github.com/sirupsen/logrus"
-	"os"
-)
-
-const (
-	MICRO_ENVIRONMENT = "MICRO_ENVIRONMENT"
-	K8S               = "k8s"
-
-	datamoverService_Docker = "datamover"
-	datamoverService_K8S    = "soda.multicloud.v1.datamover"
 )
 
 func main() {
-
-	datamoverService := datamoverService_Docker
-
-	if os.Getenv(MICRO_ENVIRONMENT) == K8S {
-		datamoverService = datamoverService_K8S
+	regType := os.Getenv("MICRO_REGISTRY")
+	var reg registry.Registry
+	if regType == "mdns" {
+		reg = mdns.NewRegistry()
 	}
-
+	if regType == "kubernetes" {
+		reg = kubernetes.NewRegistry()
+	}
 	service := micro.NewService(
-		micro.Name(datamoverService),
 		micro.Name("datamover"),
+		micro.Registry(reg),
 	)
 
 	obs.InitLogs()
 	log.Info("Init datamover serivice")
 	service.Init()
-
+	time.Local, _ = time.LoadLocation("UTC")
 	datamover.InitDatamoverService()
 	pb.RegisterDatamoverHandler(service.Server(), datamover.NewDatamoverService())
 	if err := service.Run(); err != nil {

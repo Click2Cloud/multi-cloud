@@ -15,15 +15,17 @@
 package main
 
 import (
+	"github.com/emicklei/go-restful"
+	"github.com/micro/go-micro/v2/registry"
+	"github.com/micro/go-micro/v2/web"
+	"github.com/micro/go-plugins/registry/kubernetes/v2"
+	"github.com/micro/go-plugins/registry/mdns/v2"
+	"github.com/opensds/multi-cloud/api/pkg/backend"
 	"github.com/opensds/multi-cloud/api/pkg/datamover"
 	"os"
-
-	"github.com/emicklei/go-restful"
-	"github.com/micro/go-micro/v2/web"
-	"github.com/opensds/multi-cloud/api/pkg/backend"
-	"github.com/opensds/multi-cloud/api/pkg/block"
+	//"github.com/opensds/multi-cloud/api/pkg/block"
 	"github.com/opensds/multi-cloud/api/pkg/dataflow"
-	"github.com/opensds/multi-cloud/api/pkg/file"
+	//"github.com/opensds/multi-cloud/api/pkg/file"
 	"github.com/opensds/multi-cloud/api/pkg/filters/auth"
 	"github.com/opensds/multi-cloud/api/pkg/filters/context"
 	"github.com/opensds/multi-cloud/api/pkg/filters/logging"
@@ -34,21 +36,21 @@ import (
 )
 
 const (
-	MICRO_ENVIRONMENT = "MICRO_ENVIRONMENT"
-	K8S               = "k8s"
-	apiService_Docker = "api"
-	apiService_K8S    = "soda.multicloud.v1.api"
+	serviceName = "gelato"
 )
 
 func main() {
-
-	serviceName := apiService_Docker
-	if os.Getenv(MICRO_ENVIRONMENT) == K8S {
-		serviceName = apiService_K8S
+	regType := os.Getenv("MICRO_REGISTRY")
+	var reg registry.Registry
+	if regType == "mdns" {
+		reg = mdns.NewRegistry()
 	}
-
+	if regType == "kubernetes" {
+		reg = kubernetes.NewRegistry()
+	}
 	webService := web.NewService(
 		web.Name(serviceName),
+		web.Registry(reg),
 		web.Version("v0.1.0"),
 	)
 	webService.Init()
@@ -70,7 +72,7 @@ func main() {
 		wc.Add(s3ws)
 	} else {
 		ws := new(restful.WebService)
-		ws.Path("/v1")
+		ws.Path("/")
 		ws.Doc("OpenSDS Multi-Cloud API")
 		ws.Consumes(restful.MIME_JSON)
 		ws.Produces(restful.MIME_JSON)
@@ -78,8 +80,8 @@ func main() {
 		backend.RegisterRouter(ws)
 		dataflow.RegisterRouter(ws)
 		datamover.RegisterRouter(ws)
-		block.RegisterRouter(ws)
-		file.RegisterRouter(ws)
+		//block.RegisterRouter(ws)
+		//file.RegisterRouter(ws)
 		// add filter for authentication context
 		ws.Filter(logging.FilterFactory())
 		ws.Filter(context.FilterFactory())

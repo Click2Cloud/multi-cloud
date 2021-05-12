@@ -19,6 +19,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
+	"strconv"
+	"time"
+
 	"github.com/globalsign/mgo/bson"
 	"github.com/micro/go-micro/v2/client"
 	"github.com/micro/go-micro/v2/metadata"
@@ -32,10 +36,6 @@ import (
 	s3utils "github.com/opensds/multi-cloud/s3/pkg/utils"
 	osdss3 "github.com/opensds/multi-cloud/s3/proto"
 	log "github.com/sirupsen/logrus"
-	"math"
-	"os"
-	"strconv"
-	"time"
 )
 
 var simuRoutines = 10
@@ -49,17 +49,6 @@ var jobstate = make(map[string]string)
 //const WT_MOVE = 96
 //const WT_DELETE = 4
 const JobType = "migration"
-
-const (
-	MICRO_ENVIRONMENT = "MICRO_ENVIRONMENT"
-	K8S               = "k8s"
-
-	s3Service_Docker = "s3"
-	s3Service_K8S    = "soda.multicloud.v1.s3"
-
-	backendService_Docker = "backend"
-	backendService_K8S    = "soda.multicloud.v1.backend"
-)
 
 var (
 	PENDING   = "pending"
@@ -75,17 +64,8 @@ type Migration interface {
 
 func Init() {
 	log.Infof("Migration init.")
-
-	s3Service := s3Service_Docker
-	backendService := backendService_Docker
-
-	if os.Getenv(MICRO_ENVIRONMENT) == K8S {
-		s3Service = s3Service_K8S
-		backendService = backendService_K8S
-	}
-
-	s3client = osdss3.NewS3Service(s3Service, client.DefaultClient)
-	bkendclient = backend.NewBackendService(backendService, client.DefaultClient)
+	s3client = osdss3.NewS3Service("s3", client.DefaultClient)
+	bkendclient = backend.NewBackendService("backend", client.DefaultClient)
 }
 
 func HandleMsg(msgData []byte) error {
@@ -103,6 +83,7 @@ func HandleMsg(msgData []byte) error {
 
 	//Check the status of job, and run it if needed
 	status := db.DbAdapter.GetJobStatus(job.Id)
+
 	if status != flowtype.JOB_STATUS_PENDING {
 		if status == flowtype.JOB_STATUS_RESUME {
 			log.Print("***********************RESUMING***********************")
@@ -571,7 +552,6 @@ func MultipartCopyObjLifecycle(ctx context.Context, obj *osdss3.Object, destLoca
 		destLoca.BakendName)
 	return nil
 }
-
 func deleteObj(ctx context.Context, obj *osdss3.Object) error {
 	delMetaReq := osdss3.DeleteObjectInput{Bucket: obj.BucketName, Key: obj.ObjectKey}
 	_, err := s3client.DeleteObject(ctx, &delMetaReq)
@@ -589,7 +569,6 @@ func deleteObj(ctx context.Context, obj *osdss3.Object) error {
 func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan int, req *pb.RunJobRequest, job *flowtype.Job) {
 	log.Infof("Move obj[%s] from bucket[%s] to bucket[%s].\n",
 		obj.ObjectKey, job.SourceLocation, job.DestLocation)
-
 	succeed := true
 	status := jobstate[job.Id.Hex()]
 	if status == ABORTED {
@@ -621,6 +600,7 @@ func migrate(ctx context.Context, obj *osdss3.Object, capa chan int64, th chan i
 	} else {
 		//When Object Size is greater than 5Mb
 		err = MultipartCopyObj(ctx, obj, destLoc, job)
+		log.Println("err status while paused", err)
 	}
 
 	if err != nil {

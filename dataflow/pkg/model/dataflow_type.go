@@ -34,7 +34,7 @@ var (
 	STOR_TYPE_HW_FUSIONCLOUD   = "hw-fusioncloud"
 	STOR_TYPE_IBM_COS          = "ibm-cos"
 	STOR_TYPE_ALIBABA_OSS      = "alibaba-oss"
-	STOR_TYPE_SONY_ODA         = "sony-oda"
+	STOR_TYPE_ORANGE_OSS       = "orange"
 )
 
 var (
@@ -140,6 +140,10 @@ type ObjDet struct {
 	Migrated bool                   `json:"migrated" bson:"migrated"`
 	PartTag  []*osdss3.CompletePart `json:"partTag" bson:"partTag"`
 }
+type PartDet struct {
+	Etag string `json:"etag" bson:"etag"`
+	No   int64  `json:"no" bson:"no"`
+}
 
 const (
 	TriggerTypeManual = "manual"
@@ -157,7 +161,6 @@ type Job struct {
 	TotalCapacity    int64         `json:"totalCapacity" bson:"totalCapacity"`
 	PassedCapacity   int64         `json:"passedCapacity" bson:"passedCapacity"`
 	MigratedCapacity float64       `json:"migratedCapacity" bson:"migratedCapacity"`
-	TimeRequired     int64         `json:"timeRequired" bson:"timeRequired"`
 	//when the plan related connector type is OPENSDS, then location should be bucket name
 	SourceLocation string    `json:"sourceLocation" bson:"sourceLocation"`
 	DestLocation   string    `json:"destLocation" bson:"destLocation"`
@@ -168,8 +171,10 @@ type Job struct {
 	Status         string    `json:"status" bson:"status"` //queueing,
 	TenantId       string    `json:"tenantId" bson:"tenantId"`
 	UserId         string    `json:"userId" bson:"userId"`
-	Msg            string    `json:"msg" bson:"msg"`
 	Progress       int64     `json:"progress" bson:"progress"`
+	Avg            float64   `json:""avg_speed" bson:"avg_speed"`
+	TimeRequired   int64     `json:"timeRequired" bson:"timeRequired"`
+	Msg            string    `json:"msg" bson:"msg"`
 	ObjList        []ObjDet  `json:"objList" bson:"objList"`
 	TimesResumed   int64     `json:"timesResumed" bson:"timesResumed"`
 }

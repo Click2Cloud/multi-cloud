@@ -23,12 +23,12 @@ message ResumeJobRequest {
 
 message ResumeJobResponse {
 	string err = 1;
-	string id = 2;
-	string status = 3;
+    string id = 2;
+    string status = 3;
 }
 
 message ChangeStatusRequest{
-	ChangeStatus changeStatus=1;
+		ChangeStatus changeStatus=1;
 }
 
 message ChangeStatus{
@@ -40,6 +40,7 @@ message ChangeStatusResponse{
 	ChangeStatus changeStatus=1;
 	string err=2;
 }
+
 
 message Schedule {
     string type = 1;

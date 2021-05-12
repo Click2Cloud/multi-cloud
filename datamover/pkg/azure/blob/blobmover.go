@@ -334,7 +334,7 @@ func ListObjs(loca *LocationInfo, filt *pb.Filter) ([]azblob.BlobItem, error) {
 	log.Infof("[blobmover] List objects of container[%s]\n", loca.BucketName)
 	credential, err := azblob.NewSharedKeyCredential(loca.Access, loca.Security)
 	if err != nil {
-		log.Fatalf("[blobmover] create credential failed for list objects, err:%v\n", err)
+		log.Errorf("[blobmover] create credential failed for list objects, err:%v\n", err)
 		return nil, handleAzureBlobErrors(err)
 	}
 

@@ -36,7 +36,7 @@ import (
 var InProgressObjs = make(map[string]struct{})
 
 func MoveObj(obj *osdss3.Object, targetLoc *LocationInfo, tmout time.Duration) error {
-	log.Infof("Move object[%s] for target location info=[%s]\n", obj, targetLoc)
+	log.Infof("copy object[%s], size=%d\n", obj.ObjectKey, obj.Size)
 
 	// copy object
 	ctx, _ := context.WithTimeout(context.Background(), tmout)
@@ -46,9 +46,9 @@ func MoveObj(obj *osdss3.Object, targetLoc *LocationInfo, tmout time.Duration) e
 		SrcObjectVersion: obj.VersionId,
 		SrcBucket:        obj.BucketName,
 		TargetLocation:   targetLoc.BakendName,
-		TargetBucket:     targetLoc.BucketName,
+		TargetBucket:     targetLoc.BakendName,
 		TargetTier:       targetLoc.Tier,
-		MoveType:         utils.MoveType_ChangeLocation,
+		MoveType:         utils.MoveType_MoveCrossBuckets,
 	}
 	if InProgressObjs == nil {
 		var mutex sync.Mutex
@@ -95,8 +95,7 @@ func doCrossCloudTransition(acReq *datamover.LifecycleActionRequest) error {
 
 	target := &LocationInfo{BucketName: acReq.BucketName, BakendName: acReq.TargetBackend, Tier: acReq.TargetTier}
 
-	log.Infof("transition object[%s] from [%+s] to [TargetBucket: %+s] of [TargetBackend: %+s]\n",
-		acReq.ObjKey, acReq.SourceBackend, acReq.TargetBucket, acReq.TargetBackend)
+	log.Infof("transition object[%s] from [%+s] to [%+s]\n", acReq.ObjKey, acReq.SourceBackend, acReq.TargetBackend)
 	obj := &osdss3.Object{ObjectKey: acReq.ObjKey, Size: acReq.ObjSize, BucketName: acReq.BucketName,
 		Tier: acReq.SourceTier, VersionId: acReq.VersionId}
 	if InProgressObjs == nil {

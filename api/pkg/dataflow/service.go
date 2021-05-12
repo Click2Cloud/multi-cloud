@@ -16,31 +16,23 @@ package dataflow
 
 import (
 	"encoding/json"
-	"io/ioutil"
-	"net/http"
-
 	"github.com/emicklei/go-restful"
 	"github.com/micro/go-micro/v2/client"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 	c "github.com/opensds/multi-cloud/api/pkg/context"
 	"github.com/opensds/multi-cloud/api/pkg/policy"
-	backend "github.com/opensds/multi-cloud/backend/proto"
-	dataflow "github.com/opensds/multi-cloud/dataflow/proto"
-	s3 "github.com/opensds/multi-cloud/s3/proto"
+	"github.com/opensds/multi-cloud/backend/proto"
+	"github.com/opensds/multi-cloud/dataflow/proto"
+	"github.com/opensds/multi-cloud/s3/proto"
 	log "github.com/sirupsen/logrus"
-	"os"
+	"io/ioutil"
+	"net/http"
 )
 
 const (
-	MICRO_ENVIRONMENT = "MICRO_ENVIRONMENT"
-	K8S               = "k8s"
-
-	backendService_Docker  = "backend"
-	s3Service_Docker       = "s3"
-	dataflowService_Docker = "dataflow"
-	backendService_K8S     = "soda.multicloud.v1.backend"
-	s3Service_K8S          = "soda.multicloud.v1.s3"
-	dataflowService_K8S    = "soda.multicloud.v1.dataflow"
+	backendService  = "backend"
+	s3Service       = "s3"
+	dataflowService = "dataflow"
 )
 
 type APIService struct {
@@ -50,48 +42,11 @@ type APIService struct {
 }
 
 func NewAPIService(c client.Client) *APIService {
-	backendService := backendService_Docker
-	s3Service := s3Service_Docker
-	dataflowService := dataflowService_Docker
-
-	if os.Getenv(MICRO_ENVIRONMENT) == K8S {
-		backendService = backendService_K8S
-		s3Service = s3Service_K8S
-		dataflowService = dataflowService_K8S
-	}
-
 	return &APIService{
 		backendClient:  backend.NewBackendService(backendService, c),
 		s3Client:       s3.NewS3Service(s3Service, c),
 		dataflowClient: dataflow.NewDataFlowService(dataflowService, c),
 	}
-}
-func (s *APIService) ChangeMigrationStatus(request *restful.Request, response *restful.Response) {
-	status := dataflow.ChangeStatus{}
-	err := request.ReadEntity(&status)
-	if err != nil {
-		response.WriteError(http.StatusInternalServerError, err)
-		log.Infof("read request body failed, err:%v.\n", err)
-		return
-	}
-
-	//For debug --begin
-	jsons, errs := json.Marshal(status)
-	if errs != nil {
-		log.Errorf(errs.Error())
-	} else {
-		log.Infof("Req body: %s.\n", jsons)
-	}
-	//For debug --end
-
-	ctx := common.InitCtxWithAuthInfo(request)
-	resp, err := s.dataflowClient.ChangeStatus(ctx, &dataflow.ChangeStatusRequest{ChangeStatus: &status})
-	if err != nil {
-		response.WriteError(http.StatusInternalServerError, err)
-		return
-	}
-
-	response.WriteEntity(resp)
 }
 
 func (s *APIService) ListPolicy(request *restful.Request, response *restful.Response) {
@@ -236,7 +191,7 @@ func (s *APIService) DeletePolicy(request *restful.Request, response *restful.Re
 		return
 	}
 
-	log.Info("Delete policy end, err = ", err)
+	log.Info("Delete policy end, err = %d.", err)
 	response.WriteEntity(res)
 }
 
@@ -463,6 +418,33 @@ func (s *APIService) GetJob(request *restful.Request, response *restful.Response
 	log.Info("Get job details successfully.")
 	response.WriteEntity(res)
 }
+func (s *APIService) ChangeMigrationStatus(request *restful.Request, response *restful.Response) {
+	status := dataflow.ChangeStatus{}
+	err := request.ReadEntity(&status)
+	if err != nil {
+		response.WriteError(http.StatusInternalServerError, err)
+		log.Infof("read request body failed, err:%v.\n", err)
+		return
+	}
+
+	//For debug --begin
+	jsons, errs := json.Marshal(status)
+	if errs != nil {
+		log.Errorf(errs.Error())
+	} else {
+		log.Infof("Req body: %s.\n", jsons)
+	}
+	//For debug --end
+
+	ctx := common.InitCtxWithAuthInfo(request)
+	resp, err := s.dataflowClient.ChangeStatus(ctx, &dataflow.ChangeStatusRequest{ChangeStatus: &status})
+	if err != nil {
+		response.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+
+	response.WriteEntity(resp)
+}
 
 func (s *APIService) ListJob(request *restful.Request, response *restful.Response) {
 	if !policy.Authorize(request, response, "job:list") {
@@ -520,6 +502,7 @@ func (s *APIService) ListJob(request *restful.Request, response *restful.Respons
 	log.Info("List jobs successfully.")
 	response.WriteEntity(res)
 }
+
 func (s *APIService) ResumeJob(request *restful.Request, response *restful.Response) {
 	if !policy.Authorize(request, response, "plan:run") {
 		return

@@ -16,22 +16,17 @@ package main
 
 import (
 	"fmt"
-	"os"
-
+	//"github.com/micro/go-micro/v2/registry/mdns"
 	micro "github.com/micro/go-micro/v2"
+	"github.com/micro/go-micro/v2/registry"
+	"github.com/micro/go-plugins/registry/kubernetes/v2"
+	"github.com/micro/go-plugins/registry/mdns/v2"
 	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
 	"github.com/opensds/multi-cloud/backend/pkg/db"
 	handler "github.com/opensds/multi-cloud/backend/pkg/service"
 	"github.com/opensds/multi-cloud/backend/pkg/utils/config"
 	pb "github.com/opensds/multi-cloud/backend/proto"
-)
-
-const (
-	MICRO_ENVIRONMENT = "MICRO_ENVIRONMENT"
-	K8S               = "k8s"
-
-	backendService_Docker = "backend"
-	backendService_K8S    = "soda.multicloud.v1.backend"
+	"os"
 )
 
 func main() {
@@ -43,15 +38,20 @@ func main() {
 
 	obs.InitLogs()
 
-	backendService := backendService_Docker
-
-	if os.Getenv(MICRO_ENVIRONMENT) == K8S {
-		backendService = backendService_K8S
+	regType := os.Getenv("MICRO_REGISTRY")
+	var reg registry.Registry
+	if regType == "mdns" {
+		reg = mdns.NewRegistry()
+	}
+	if regType == "kubernetes" {
+		reg = kubernetes.NewRegistry()
 	}
 
 	service := micro.NewService(
-		micro.Name(backendService),
+		micro.Name("backend"),
+		micro.Registry(reg),
 	)
+
 	service.Init()
 
 	pb.RegisterBackendHandler(service.Server(), handler.NewBackendService())
