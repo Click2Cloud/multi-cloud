@@ -32,6 +32,7 @@ func Create(ctx context.Context, pol *Policy) (*Policy, error) {
 		log.Errorf("Invalid policy name[%s], err:%v\n", pol.Name, err)
 		return nil, ERR_INVALID_POLICY_NAME
 	}
+	log.Info("create policy data", pol)
 
 	return db.DbAdapter.CreatePolicy(ctx, pol)
 }
