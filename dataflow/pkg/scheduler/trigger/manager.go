@@ -51,7 +51,7 @@ func (m *Manager) Add(ctx context.Context, plan *model.Plan, executer Executer) 
 	tg := GetTrigger(policy.Schedule.Type)
 	if tg == nil {
 		msg := fmt.Sprintf("specifed trigger type(%s) is not exist", policy.Schedule.Type)
-		log.Info(msg)
+		log.Info("get trigger info", msg)
 		return errors.New(msg)
 	}
 
