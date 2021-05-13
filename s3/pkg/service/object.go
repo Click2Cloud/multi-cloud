@@ -736,12 +736,12 @@ func initTargeObject(ctx context.Context, in *pb.MoveObjectRequest, srcObject *p
 
 	targetObject := &pb.Object{
 		ObjectKey:            srcObject.ObjectKey,
-		BucketName:           srcObject.BucketName,
+		BucketName:           in.TargetBucket,
 		ObjectId:             srcObject.ObjectId,
 		Size:                 srcObject.Size,
 		Etag:                 srcObject.Etag,
-		Location:             srcObject.Location,
-		Tier:                 srcObject.Tier,
+		Location:             in.TargetLocation,
+		Tier:                 in.TargetTier,
 		TenantId:             srcObject.TenantId,
 		UserId:               srcObject.UserId,
 		StorageMeta:          srcObject.StorageMeta,
@@ -775,7 +775,7 @@ func (s *s3Service) MoveObject(ctx context.Context, in *pb.MoveObjectRequest, ou
 		log.Errorf("failed to get object[%s] of bucket[%s]. err:%v\n", in.SrcObject, in.SrcBucket, err)
 		return err
 	}
-    log.Debug("The source object:", srcObject)
+	log.Debug("The source object:", srcObject)
 
 	targetObject, err := initTargeObject(ctx, in, srcObject.Object)
 	if err != nil {
@@ -791,7 +791,7 @@ func (s *s3Service) MoveObject(ctx context.Context, in *pb.MoveObjectRequest, ou
 		log.Errorf("get source bucket[%s] failed with err:%v", in.SrcBucket, err)
 		return err
 	}
-    log.Debug("The souce bucket:", srcBucket)
+	log.Debug("The souce bucket:", srcBucket)
 
 	srcBackend, err := utils.GetBackend(ctx, s.backendClient, srcObject.Location)
 	if err != nil {
