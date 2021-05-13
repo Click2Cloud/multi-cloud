@@ -93,7 +93,7 @@ func doCrossCloudTransition(acReq *datamover.LifecycleActionRequest) error {
 	log.Infof("cross-cloud transition action: transition %s from %d of %s to %d of %s.\n",
 		acReq.ObjKey, acReq.SourceTier, acReq.SourceBackend, acReq.TargetTier, acReq.TargetBackend)
 
-	target := &LocationInfo{BucketName: acReq.BucketName, BakendName: acReq.TargetBackend, Tier: acReq.TargetTier}
+	target := &LocationInfo{BucketName: acReq.TargetBucket, BakendName: acReq.TargetBackend, Tier: acReq.TargetTier}
 
 	log.Infof("transition object[%s] from [%+s] to [TargetBucket: %+s] of [TargetBackend: %+s]\n",
 		acReq.ObjKey, acReq.SourceBackend, acReq.TargetBucket, acReq.TargetBackend)
