@@ -736,12 +736,12 @@ func initTargeObject(ctx context.Context, in *pb.MoveObjectRequest, srcObject *p
 
 	targetObject := &pb.Object{
 		ObjectKey:            srcObject.ObjectKey,
-		BucketName:           in.TargetBucket,
+		BucketName:           srcObject.BucketName,
 		ObjectId:             srcObject.ObjectId,
 		Size:                 srcObject.Size,
 		Etag:                 srcObject.Etag,
-		Location:             in.TargetLocation,
-		Tier:                 in.TargetTier,
+		Location:             srcObject.Location,
+		Tier:                 srcObject.Tier,
 		TenantId:             srcObject.TenantId,
 		UserId:               srcObject.UserId,
 		StorageMeta:          srcObject.StorageMeta,
