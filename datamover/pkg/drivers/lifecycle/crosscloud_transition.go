@@ -90,8 +90,8 @@ func MultipartMoveObj(obj *osdss3.Object, targetLoc *LocationInfo, partSize int6
 }
 
 func doCrossCloudTransition(acReq *datamover.LifecycleActionRequest) error {
-	log.Infof("cross-cloud transition action: transition %s from %d of %s to %d of %s.\n",
-		acReq.ObjKey, acReq.SourceTier, acReq.SourceBackend, acReq.TargetTier, acReq.TargetBackend)
+	log.Infof("cross-cloud transition action: transition %s from %d of %s to %d of %s of %s.\n",
+		acReq.ObjKey, acReq.SourceTier, acReq.SourceBackend, acReq.TargetTier, acReq.TargetBucket, acReq.TargetBackend)
 
 	target := &LocationInfo{BucketName: acReq.TargetBucket, BakendName: acReq.TargetBackend, Tier: acReq.TargetTier}
 
