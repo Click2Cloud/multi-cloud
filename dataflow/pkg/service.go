@@ -208,6 +208,7 @@ func (b *dataflowService) CreatePolicy(ctx context.Context, in *pb.CreatePolicyR
 	if in.Policy.GetSchedule() != nil {
 		pol.Schedule.Type = in.Policy.Schedule.Type
 		pol.Schedule.TriggerProperties = in.Policy.Schedule.TiggerProperties
+		log.Infof("schedule call in create plan:%+v\n", pol.Schedule.TriggerProperties)
 	} else {
 		out.Err = "get schedule failed"
 		return errors.New("get schedule failed")
