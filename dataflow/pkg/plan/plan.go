@@ -127,6 +127,7 @@ func Create(ctx context.Context, plan *Plan) (*Plan, error) {
 	}
 
 	if plan.PolicyId != "" && plan.PolicyEnabled {
+		log.Print("policyid and enbled", plan.PolicyId, plan.PolicyEnabled)
 		if err := trigger.GetTriggerMgr().Add(ctx, plan, NewPlanExecutor(plan)); err != nil {
 			log.Errorf("Add plan(%s) to trigger failed, %v", plan.Id.Hex(), err)
 			return nil, err
