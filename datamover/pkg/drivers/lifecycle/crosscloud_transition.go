@@ -48,8 +48,7 @@ func MoveObj(obj *osdss3.Object, targetLoc *LocationInfo, tmout time.Duration) e
 		TargetLocation:   targetLoc.BakendName,
 		TargetBucket:     targetLoc.BucketName,
 		TargetTier:       targetLoc.Tier,
-		MoveType:         utils.MoveType_MoveCrossBuckets,
-	}
+		MoveType:         utils.MoveType_ChangeLocation}
 	if InProgressObjs == nil {
 		var mutex sync.Mutex
 		mutex.Lock()

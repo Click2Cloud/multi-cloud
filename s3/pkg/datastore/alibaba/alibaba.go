@@ -95,7 +95,7 @@ func (ad *OSSAdapter) Put(ctx context.Context, stream io.Reader, object *pb.Obje
 	}
 	storClass, err := osdss3.GetNameFromTier(object.Tier, utils.OSTYPE_ALIBABA)
 	if err != nil {
-		log.Infof("translate tier[%d] to aws storage class failed\n", object.Tier)
+		log.Infof("translate tier[%d] to alibaba storage class failed\n", object.Tier)
 		return result, ErrInternalError
 	}
 	var storageClass oss.StorageClassType
@@ -394,7 +394,7 @@ func (ad *OSSAdapter) ListParts(context context.Context, listParts *pb.ListParts
 
 }
 func (ad *OSSAdapter) Restore(ctx context.Context, target *pb.Restore) error {
-    return nil
+	return nil
 }
 
 func (ad *OSSAdapter) BackendCheck(ctx context.Context, backendDetail *pb.BackendDetailS3) error {

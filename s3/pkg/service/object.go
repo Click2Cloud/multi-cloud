@@ -825,7 +825,11 @@ func (s *s3Service) MoveObject(ctx context.Context, in *pb.MoveObjectRequest, ou
 		log.Infof("Now need to move data and also change storage tier:%s", targetObject.ObjectKey)
 		// need move data, get target location first
 		if in.MoveType == utils.MoveType_ChangeLocation {
-			targetBucket = srcBucket
+			targetBucket, err = s.MetaStorage.GetBucket(ctx, in.TargetBucket, true)
+			if err != nil {
+				log.Errorf("get bucket[%s] failed with err:%v\n", in.TargetBucket, err)
+				return err
+			}
 			targetObject.Location = in.TargetLocation
 			targetObject.BucketName = in.TargetBucket
 			log.Infof("Move %s cross backends, srcBackend=%s, targetBackend=%s, targetBucket=%s targetTier=%d\n",
