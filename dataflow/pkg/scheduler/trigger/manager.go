@@ -49,6 +49,8 @@ func (m *Manager) Add(ctx context.Context, plan *model.Plan, executer Executer) 
 	}
 
 	tg := GetTrigger(policy.Schedule.Type)
+	ct := policy.Schedule.TriggerProperties
+	log.Info("printing schedule time", ct)
 	if tg == nil {
 		msg := fmt.Sprintf("specifed trigger type(%s) is not exist", policy.Schedule.Type)
 		log.Info("get trigger info", msg)
