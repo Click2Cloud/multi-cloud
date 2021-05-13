@@ -37,12 +37,17 @@ func init() {
 func (c *CronTrigger) Add(planId, properties string, executer trigger.Executer) error {
 	cn := cron.New()
 	c.plans[planId] = cn
+	log.Info("cn data", cn)
+	log.Info(c.plans)
 	if err := cn.AddFunc(properties, executer.Run); err != nil {
 		log.Errorf("Add plan(%s) to  corn trigger failed: %v", planId, err)
 		return fmt.Errorf("Add plan(%s) to corn trigger failed: %v", planId, err)
 	}
 	cn.Start()
+	log.Info(cn.Start, cn.Schedule, cn.Entries())
 	log.Infof("Add plan(%s) to scheduler, next execute time: %v", planId, cn.Entries()[0].Next)
+	log.Info(cn.Entries()[0].Schedule)
+	log.Info(cn.Entries()[0].Next)
 	return nil
 }
 
