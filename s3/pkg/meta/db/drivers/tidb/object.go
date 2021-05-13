@@ -180,7 +180,7 @@ func (t *TidbClient) UpdateObject4Lifecycle(ctx context.Context, old, new *Objec
 	oldversion := VersionStr2UInt64(old.VersionId)
 
 	sqltext := "update objects set location=?,objectid=?,tier=?,storageMeta=? where bucketname=? and name=? and version=?"
-	args := []interface{}{new.Location, new.ObjectId, new.Tier, new.StorageMeta, old.BucketName, old.ObjectKey, oldversion}
+	args := []interface{}{new.Location, new.ObjectId, new.Tier, new.StorageMeta, new.BucketName, old.ObjectKey, oldversion}
 
 	log.Debugf("sqltext:%s, args:%+v\n", sqltext, args)
 	_, err = sqlTx.Exec(sqltext, args...)
