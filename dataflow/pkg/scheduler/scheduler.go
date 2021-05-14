@@ -57,7 +57,9 @@ func LoadAllPlans() {
 			if p.PolicyId == "" || !p.PolicyEnabled {
 				continue
 			}
+			log.Infof("schedule policyid check", p.PolicyId)
 			e := plan.NewPlanExecutor(&p)
+			log.Info("trigger new plan executor", e)
 			err := trigger.GetTriggerMgr().Add(ctx, &p, e)
 			if err != nil {
 				log.Errorf("Load plan(%s) to trigger failed, %v", p.Id.Hex(), err)
