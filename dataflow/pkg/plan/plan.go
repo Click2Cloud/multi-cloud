@@ -292,6 +292,7 @@ func Run(planId, tenantId, userId string) (bson.ObjectId, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Info("run job plan id", plan)
 
 	//scheduling must be mutual excluded among several schedulers
 	//Get Lock
