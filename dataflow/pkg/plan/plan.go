@@ -299,6 +299,7 @@ func Run(planId, tenantId, userId string) (bson.ObjectId, error) {
 	ret := db.DbAdapter.LockSched(tenantId, string(plan.Id.Hex()))
 	for i := 0; i < 3; i++ {
 		if ret == LockSuccess {
+			log.Info("lockschuduler in plan.go", ret)
 			//Make sure unlock before return
 			defer db.DbAdapter.UnlockSched(tenantId, string(plan.Id.Hex()))
 			break
