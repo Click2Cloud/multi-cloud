@@ -35,7 +35,7 @@ services:
       - MICRO_SERVER_ADDRESS=:8089
       - MICRO_REGISTRY=mdns
       - OS_AUTH_AUTHSTRATEGY=keystone
-      - OS_AUTH_URL=http://192.168.3.25/identity
+      - OS_AUTH_URL=http://192.168.200.169/identity
       - OS_USER_DOMIN_ID=Default
       - OS_USERNAME=opensds
       - OS_PASSWORD=opensds@123
@@ -56,7 +56,7 @@ services:
       - MICRO_SERVER_ADDRESS=:8090
       - MICRO_REGISTRY=mdns
       - OS_AUTH_AUTHSTRATEGY=keystone
-      - OS_AUTH_URL=http://192.168.3.25/identity
+      - OS_AUTH_URL=http://192.168.200.169/identity
       - OS_USER_DOMIN_ID=Default
       - OS_USERNAME=opensds
       - OS_PASSWORD=opensds@123
@@ -91,14 +91,14 @@ services:
       - /etc/localtime:/etc/localtime
       - /var/log/multi-cloud:/var/log/multi-cloud
       - ./examples/multi-cloud.conf:/etc/multi-cloud/multi-cloud.conf
-  
+
   file:
     image: sodafoundation/multi-cloud-file
     environment:
       - MICRO_REGISTRY=mdns
       - DB_HOST=datastore:27017
       - OS_AUTH_AUTHSTRATEGY=keystone
-      - OS_AUTH_URL=http://192.168.3.25/identity
+      - OS_AUTH_URL=http://192.168.200.169/identity
       - OS_USER_DOMIN_ID=Default
       - OS_USERNAME=opensds
       - OS_PASSWORD=opensds@123
