@@ -37,6 +37,8 @@ func init() {
 func (c *CronTrigger) Add(planId, properties string, executer trigger.Executer) error {
 	cn := cron.New()
 	c.plans[planId] = cn
+	data := c.plans[planId]
+	log.Info("add chek plan id", data)
 	log.Info("check add trigger", c.plans[planId])
 	log.Info("info of cn", cn)
 	if err := cn.AddFunc(properties, executer.Run); err != nil {
