@@ -28,7 +28,7 @@ type AlibabaBlockDriverFactory struct {
 func (factory *AlibabaBlockDriverFactory) CreateBlockStorageDriver(backend *backendpb.BackendDetail) (driver.BlockDriver, error) {
 	log.Infof("Entered to create Alibaba volume driver")
 
-	ecsClient, err := ecs.NewClientWithAccessKey(string(backend.Region), string(backend.Access), string(backend.Security))
+	ecsClient, err := ecs.NewClientWithAccessKey(backend.Region, backend.Access, backend.Security)
 	if err != nil {
 		log.Errorf("Error in creating the client")
 		return nil, err

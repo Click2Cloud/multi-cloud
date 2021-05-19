@@ -34,8 +34,8 @@ func (ad *AlibabaAdapter) ParseVolume(volumeParsed *ecs.Disk) (*block.Volume, er
 
 	meta := make(map[string]interface{})
 	meta = map[string]interface{}{
-		VolumeId: &volumeParsed.DiskId,
-		//CreationTimeAtBackend: &volumeParsed.CreationTime,
+		VolumeId:              &volumeParsed.DiskId,
+		CreationTimeAtBackend: &volumeParsed.CreationTime,
 		//PerformanceLevel:      volumeParsed.PerformanceLevel,
 	}
 
@@ -47,17 +47,18 @@ func (ad *AlibabaAdapter) ParseVolume(volumeParsed *ecs.Disk) (*block.Volume, er
 
 	volume := &block.Volume{
 
-		Name:             volumeParsed.DiskName,
-		Description:      volumeParsed.Description,
-		Size:             (int64)(volumeParsed.Size),
-		Type:             volumeParsed.Category,
-		Region:           volumeParsed.RegionId,
-		AvailabilityZone: volumeParsed.ZoneId,
-		Status:           volumeParsed.Status,
-		Iops:             (int64)(volumeParsed.IOPS),
-		SnapshotId:       volumeParsed.SourceSnapshotId,
-		Encrypted:        volumeParsed.Encrypted,
-		Metadata:         metadata,
+		Name:               volumeParsed.DiskName,
+		Description:        volumeParsed.Description,
+		Size:               (int64)(volumeParsed.Size),
+		Type:               volumeParsed.Category,
+		Region:             volumeParsed.RegionId,
+		AvailabilityZone:   volumeParsed.ZoneId,
+		Status:             volumeParsed.Status,
+		Iops:               (int64)(volumeParsed.IOPS),
+		SnapshotId:         volumeParsed.SourceSnapshotId,
+		MultiAttachEnabled: false,
+		Encrypted:          volumeParsed.Encrypted,
+		Metadata:           metadata,
 	}
 	if volumeParsed.Encrypted {
 		volume.EncryptionSettings = map[string]string{
@@ -94,26 +95,37 @@ func (ad *AlibabaAdapter) CreateVolume(ctx context.Context, volume *block.Create
 	}
 
 	request := ecs.CreateCreateDiskRequest()
-
-	request.DiskName = volume.Volume.Name
-	request.Description = volume.Volume.Description
-	request.Size = requests.NewInteger(int(volume.Volume.Size))
-	request.DiskCategory = volume.Volume.Type
 	request.RegionId = volume.Volume.Region
 	request.ZoneId = volume.Volume.AvailabilityZone
 	request.SnapshotId = volume.Volume.SnapshotId
-	request.Tag = &tags
-	//request.PerformanceLevel = strconv.Itoa(int(volume.Volume.Iops)) this parameter can be used for essd disk but default iops is in int64.
+	request.DiskName = volume.Volume.Name
+	request.Size = requests.NewInteger(int(volume.Volume.Size))
+	request.DiskCategory = volume.Volume.Type
+	request.Description = volume.Volume.Description
 	request.Encrypted = requests.NewBoolean(volume.Volume.Encrypted)
-
+	request.Tag = &tags
 	if request.Encrypted == "true" {
 		request.KMSKeyId = volume.Volume.EncryptionSettings[KmsKeyId]
 	}
 
-	//if request.DiskCategory == "cloud_essd" {
-	//	request.PerformanceLevel = volume.Volume.Metadata.Fields[PerformanceLevel].GetStringValue()
-	//}else if request.DiskCategory == "cloud_ssd" || request.DiskCategory == "cloud_efficiency" {
-	//	request.PerformanceLevel = ""
+	// volumetype ESSD is not yet supported by alibaba api hence, performancelevel variable is commented
+	//	PL1: A single ESSD can deliver up to 50,000 random read/write IOPS.
+	//	PL2: A single ESSD can deliver up to 100,000 random read/write IOPS.
+	//	PL3: A single ESSD can deliver up to 1,000,000 random read/write IOPS
+
+	//if volume.Volume.Type == "cloud_essd"{
+	//	if volume.Volume.Iops > 0 && volume.Volume.Iops <= 1000 {
+	//		request.PerformanceLevel = "PL0"
+	//	}
+	//	if volume.Volume.Iops > 1000 && volume.Volume.Iops <= 50000 {
+	//		request.PerformanceLevel = "PL1"
+	//	}
+	//	if volume.Volume.Iops > 50000 && volume.Volume.Iops <= 100000 {
+	//		request.PerformanceLevel = "PL2"
+	//	}
+	//	if volume.Volume.Iops > 100000 && volume.Volume.Iops <= 1000000 {
+	//		request.PerformanceLevel = "PL3"
+	//	}
 	//}
 
 	response, err := svc.CreateDisk(request)
@@ -123,18 +135,19 @@ func (ad *AlibabaAdapter) CreateVolume(ctx context.Context, volume *block.Create
 	}
 	log.Debugf("Create Volume response = %+v", response)
 	vol, err := ad.ParseVolume(&ecs.Disk{
-		DiskId:       response.DiskId,
-		Size:         int(volume.Volume.Size),
-		IOPS:         (int)(volume.Volume.Iops),
-		RegionId:     volume.Volume.Region,
-		Description:  volume.Volume.Description,
-		Type:         volume.Volume.Type,
-		CreationTime: time.Now().Format(time.RFC1123),
-		ZoneId:       volume.Volume.AvailabilityZone,
-		DiskName:     volume.Volume.Name,
-		Status:       volume.Volume.Status,
-		Encrypted:    volume.Volume.Encrypted,
-		KMSKeyId:     volume.Volume.EncryptionSettings[KmsKeyId],
+		RegionId:         volume.Volume.Region,
+		ZoneId:           volume.Volume.AvailabilityZone,
+		SourceSnapshotId: volume.Volume.SnapshotId,
+		DiskName:         volume.Volume.Name,
+		Size:             int(volume.Volume.Size),
+		Type:             volume.Volume.Type,
+		Description:      volume.Volume.Description,
+		Encrypted:        volume.Volume.Encrypted,
+		DiskId:           response.DiskId,
+		Status:           volume.Volume.Status,
+		KMSKeyId:         volume.Volume.EncryptionSettings[KmsKeyId],
+		IOPS:             (int)(volume.Volume.Iops),
+		CreationTime:     time.Now().Format(time.RFC1123),
 	})
 	if err != nil {
 		log.Error(err)
@@ -152,18 +165,24 @@ func (ad *AlibabaAdapter) CreateVolume(ctx context.Context, volume *block.Create
 func (ad *AlibabaAdapter) GetVolume(ctx context.Context, volume *block.GetVolumeRequest) (*block.GetVolumeResponse, error) {
 
 	svc := ad.Client
-
 	request := ecs.CreateDescribeDisksRequest()
-	volumeId := volume.Volume.Metadata.Fields[VolumeId].GetStringValue()
-
-	request.DiskIds = volumeId
+	request.DiskName = volume.Volume.Name
+	request.RegionId = volume.Volume.Region
+	request.ZoneId = volume.Volume.AvailabilityZone
+	request.Category = volume.Volume.Type
+	//id,_ := fmt.Println(volume.Volume.Metadata.Fields[VolumeId].GetStringValue())
+	//request.DiskIds = string(id)
 
 	response, err := svc.DescribeDisks(request)
+	if err != nil {
+		log.Error(err)
+		//	return nil, err
+	}
 
 	log.Infof("Get Volume response = %+v", response)
 
 	vol, err := ad.ParseVolume(&ecs.Disk{
-		DiskId:       request.DiskIds,
+		DiskId:       volume.Volume.Metadata.Fields[VolumeId].GetStringValue(),
 		Size:         int(volume.Volume.Size),
 		IOPS:         (int)(volume.Volume.Iops),
 		RegionId:     volume.Volume.Region,
@@ -179,7 +198,7 @@ func (ad *AlibabaAdapter) GetVolume(ctx context.Context, volume *block.GetVolume
 
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		//return nil, err
 	}
 
 	return &block.GetVolumeResponse{
@@ -219,34 +238,76 @@ func (ad *AlibabaAdapter) ListVolume(ctx context.Context, volume *block.ListVolu
 func (ad *AlibabaAdapter) UpdateVolume(ctx context.Context, volume *block.UpdateVolumeRequest) (*block.UpdateVolumeResponse, error) {
 
 	svc := ad.Client
-	request := ecs.CreateResizeDiskRequest()
-	request.RegionId = volume.Volume.Region
-	request.NewSize = requests.NewInteger(int(volume.Volume.Size))
-	request.DiskId = volume.Volume.Metadata.Fields[VolumeId].GetStringValue()
-	request.Type = volume.Volume.Type
 
-	response, err := svc.ResizeDisk(request)
-	if err != nil {
-		log.Errorf("Error in updating volume: %+v", response, err)
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			default:
-				log.Errorf(aerr.Error())
-			}
-		} else {
-			log.Errorf(err.Error())
-		}
-		return nil, err
+	tags := []ecs.CreateDiskTag{}
+	for _, tag := range volume.Volume.Tags {
+		tags = append(tags, ecs.CreateDiskTag{
+			Key:   tag.Key,
+			Value: tag.Value,
+		})
 	}
-	log.Debugf("Update Volume response = %+v", response)
+
+	//if volume.Volume.Name != "" || volume.Volume.Description != "" {
+	//
+	//	request := ecs.CreateModifyDiskAttributeRequest()
+	//	request.DiskId = volume.Volume.Metadata.Fields[VolumeId].GetStringValue()
+	//	request.DiskName = volume.Volume.Name
+	//	request.Description = volume.Volume.Description
+	//
+	//	response, err := svc.ModifyDiskAttribute(request)
+	//	if err != nil {
+	//		log.Errorf("Error in updating volume at modify disk attributes: %+v", response, err)
+	//		if aerr, ok := err.(awserr.Error); ok {
+	//			switch aerr.Code() {
+	//			default:
+	//				log.Errorf(aerr.Error())
+	//			}
+	//		} else {
+	//			log.Errorf(err.Error())
+	//		}
+	//		return nil, err
+	//	}
+	//	log.Debugf("Update Volume response = %+v", response)
+	//
+	//}
+
+	if &volume.Volume.Size != nil {
+
+		request := ecs.CreateResizeDiskRequest()
+		request.NewSize = requests.NewInteger(int(volume.Volume.Size))
+		request.DiskId = volume.Volume.Metadata.Fields[VolumeId].GetStringValue()
+
+		response, err := svc.ResizeDisk(request)
+		if err != nil {
+			log.Errorf("Error in updating volume: %+v", response, err)
+			if aerr, ok := err.(awserr.Error); ok {
+				switch aerr.Code() {
+				default:
+					log.Errorf(aerr.Error())
+				}
+			} else {
+				log.Errorf(err.Error())
+			}
+			return nil, err
+		}
+		log.Debugf("Update Volume response = %+v", response)
+
+	}
 
 	vol, err := ad.ParseVolume(&ecs.Disk{
 		Size:         int(volume.Volume.Size),
 		CreationTime: time.Now().Format(time.RFC1123),
+		DiskId:       volume.Volume.Metadata.Fields[VolumeId].GetStringValue(),
+		Category:     volume.Volume.Type,
+		Description:  volume.Volume.Description,
+		Encrypted:    volume.Volume.Encrypted,
+		KMSKeyId:     volume.Volume.Metadata.Fields[VolumeId].GetStringValue(),
 	})
 	if err != nil {
 		log.Error(err)
 		return nil, err
+	} else {
+		vol.Tags, _ = ad.ParseTag(tags)
 	}
 
 	return &block.UpdateVolumeResponse{
