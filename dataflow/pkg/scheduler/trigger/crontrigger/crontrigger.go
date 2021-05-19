@@ -41,6 +41,7 @@ func (c *CronTrigger) Add(planId, properties string, executer trigger.Executer) 
 	log.Info("check add trigger", c.plans[planId])
 	log.Info("info of cn", cn)
 	if err := cn.AddFunc(properties, executer.Run); err != nil {
+		log.Info("Check data of properties and executer", properties, executer)
 		log.Errorf("Add plan(%s) to  corn trigger failed: %v", planId, err)
 		return fmt.Errorf("Add plan(%s) to corn trigger failed: %v", planId, err)
 	}
