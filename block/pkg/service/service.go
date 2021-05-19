@@ -292,7 +292,8 @@ func (b *blockService) UpdateVolume(ctx context.Context, in *pb.UpdateVolumeRequ
 		updatedName = in.Volume.Name
 	}
 	if backend.Backend.Type == constants.BackendTypeAwsBlock ||
-		backend.Backend.Type == constants.BackendTypeHpcBlock {
+		backend.Backend.Type == constants.BackendTypeHpcBlock ||
+		backend.Backend.Type == constants.BackendTypeAlibabaBlock {
 		metaMap, err := utils.ConvertMetadataStructToMap(in.Volume.Metadata)
 		if err != nil {
 			log.Errorf("Failed to convert metaStruct: [%+v] to metaMap , error: %s", in.Volume.Metadata, err)
