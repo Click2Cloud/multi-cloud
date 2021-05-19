@@ -51,6 +51,7 @@ func (c *CronTrigger) Update(planId, properties string, executer trigger.Execute
 	var ok bool
 	if executer == nil {
 		if executer, ok = c.plans[planId]; ok {
+			log.Info("Plan is not in trigger")
 			return model.ERR_PLAN_NOT_IN_TRIGGER
 		}
 	}
