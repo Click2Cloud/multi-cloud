@@ -775,7 +775,7 @@ func (s *s3Service) MoveObject(ctx context.Context, in *pb.MoveObjectRequest, ou
 		log.Errorf("failed to get object[%s] of bucket[%s]. err:%v\n", in.SrcObject, in.SrcBucket, err)
 		return err
 	}
-    log.Debug("The source object:", srcObject)
+	log.Debug("The source object:", srcObject)
 
 	targetObject, err := initTargeObject(ctx, in, srcObject.Object)
 	if err != nil {
@@ -791,7 +791,7 @@ func (s *s3Service) MoveObject(ctx context.Context, in *pb.MoveObjectRequest, ou
 		log.Errorf("get source bucket[%s] failed with err:%v", in.SrcBucket, err)
 		return err
 	}
-    log.Debug("The souce bucket:", srcBucket)
+	log.Debug("The souce bucket:", srcBucket)
 
 	srcBackend, err := utils.GetBackend(ctx, s.backendClient, srcObject.Location)
 	if err != nil {
@@ -825,7 +825,11 @@ func (s *s3Service) MoveObject(ctx context.Context, in *pb.MoveObjectRequest, ou
 		log.Infof("Now need to move data and also change storage tier:%s", targetObject.ObjectKey)
 		// need move data, get target location first
 		if in.MoveType == utils.MoveType_ChangeLocation {
-			targetBucket = srcBucket
+			targetBucket, err = s.MetaStorage.GetBucket(ctx, in.TargetBucket, true)
+			if err != nil {
+				log.Errorf("get bucket[%s] failed with err:%v\n", in.TargetBucket, err)
+				return err
+			}
 			targetObject.Location = in.TargetLocation
 			targetObject.BucketName = in.TargetBucket
 			log.Infof("Move %s cross backends, srcBackend=%s, targetBackend=%s, targetBucket=%s targetTier=%d\n",
