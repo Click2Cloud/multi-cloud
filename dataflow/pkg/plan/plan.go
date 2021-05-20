@@ -380,6 +380,7 @@ func NewPlanExecutor(plan *Plan) trigger.Executer {
 }
 
 func (p *TriggerExecutor) Run() {
+	log.Info("check planid in triggerExecuter run", p.planId)
 	log.Infof("schedudler run plan (%s) is called in dataflow service.", p.planId)
 	jobId, err := Run(p.planId, p.tenantId, p.userId)
 	if err != nil {
