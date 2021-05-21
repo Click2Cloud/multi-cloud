@@ -38,6 +38,7 @@ func GetTriggerMgr() *Manager {
 type Manager struct{}
 
 func (m *Manager) Add(ctx context.Context, plan *model.Plan, executer Executer) error {
+	log.Info("successfully called in add manager dataflow")
 
 	if plan.PolicyId == "" {
 		return fmt.Errorf("specifed plan(%s) does not have policy", plan.Id.Hex())
