@@ -17,6 +17,7 @@ package main
 import (
 	"fmt"
 	pb "github.com/opensds/multi-cloud/datamover/proto"
+	"time"
 
 	"github.com/micro/go-micro/v2"
 	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
@@ -49,7 +50,7 @@ func main() {
 	obs.InitLogs()
 	log.Info("Init datamover serivice")
 	service.Init()
-
+	time.Local, _ = time.LoadLocation("UTC")
 	datamover.InitDatamoverService()
 	pb.RegisterDatamoverHandler(service.Server(), datamover.NewDatamoverService())
 	if err := service.Run(); err != nil {
