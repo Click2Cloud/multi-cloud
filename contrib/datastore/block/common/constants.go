@@ -14,7 +14,8 @@
 package common
 
 const (
-	GB_FACTOR = 1024 * 1024 * 1024
+	//GB_FACTOR = 1024 * 1024 * 1024
+	GB_FACTOR = 1
 
 	// Information about the volume attachments.
 	Attachments = "Attachments"

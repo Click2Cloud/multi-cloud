@@ -60,16 +60,16 @@ func (ad *AwsAdapter) ParseVolume(volumeAWS *awsec2.Volume) (*block.Volume, erro
 	}
 
 	volume := &block.Volume{
-		Size:               *volumeAWS.Size * utils.GB_FACTOR,
-		Encrypted:          *volumeAWS.Encrypted,
-		Status:             *volumeAWS.State,
-		SnapshotId:         *volumeAWS.SnapshotId,
-		Type:               *volumeAWS.VolumeType,
-		Tags:               tags,
-		Metadata:           metadata,
+		Size:       *volumeAWS.Size * utils.GB_FACTOR,
+		Encrypted:  *volumeAWS.Encrypted,
+		Status:     *volumeAWS.State,
+		SnapshotId: *volumeAWS.SnapshotId,
+		Type:       *volumeAWS.VolumeType,
+		Tags:       tags,
+		Metadata:   metadata,
 	}
 
-	if *volumeAWS.VolumeType == "gp2" || *volumeAWS.VolumeType == "io1"{
+	if *volumeAWS.VolumeType == "io1" || *volumeAWS.VolumeType == "io2" || *volumeAWS.VolumeType == "gp3" {
 		volume.Iops = *volumeAWS.Iops
 	}
 
@@ -154,8 +154,8 @@ func (ad *AwsAdapter) CreateVolume(ctx context.Context, volume *block.CreateVolu
 		Encrypted:         aws.Bool(volume.Volume.Encrypted),
 	}
 
-	if volume.Volume.Type ==  "io1" {
-		// Iops is required only for io1 volumes
+	if volume.Volume.Type == "io1" || volume.Volume.Type == "io2" || volume.Volume.Type == "gp3" {
+		// Iops is required only for io1 && io2 && gp3 volumes
 		input.Iops = aws.Int64(volume.Volume.Iops)
 
 		//Only for specific regions supported
