@@ -307,7 +307,6 @@ func (b *blockService) UpdateVolume(ctx context.Context, in *pb.UpdateVolumeRequ
 		}
 		in.Volume.Metadata = metaStruct
 	}
-
 	vol, err := sd.UpdateVolume(ctx, in)
 	if err != nil {
 		log.Errorf("received error in updating volumes at backend, error: %s ", err)
