@@ -480,6 +480,12 @@ func (s *s3Service) CompleteMultipartUpload(ctx context.Context, in *pb.Complete
 			return ErrDBError
 		}
 	} else {
+		err = s.MetaStorage.PutObject(ctx, &Object{Object: object}, oldObj, &multipart, nil, true)
+		if err != nil {
+			log.Errorf("failed to put object meta[object:%+v, oldObj:%+v]. err:%v\n", object, oldObj, err)
+			// TODO: consistent check & clean
+			return ErrDBError
+		}
 		err = s.MetaStorage.UpdateObject4Lifecycle(ctx, oldObj, &Object{Object: object}, &multipart)
 		if err != nil {
 			log.Errorln("failed to put object meta. err:", err)
