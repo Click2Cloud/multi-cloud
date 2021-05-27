@@ -884,12 +884,20 @@ func (s *s3Service) MoveObject(ctx context.Context, in *pb.MoveObjectRequest, ou
 		// update object meta data
 
 		log.Debug("Now update the meta data of object after copy")
+		err = s.MetaStorage.PutObject(ctx, newObj, srcObject, nil, nil, true)
+		if err != nil {
+			log.Errorf("failed to put object meta[object:%+v, oldObj:%+v]. err:%v\n", newObj, srcObject, err)
+			// TODO: consistent check & clean
+			return ErrDBError
+		}
 		err = s.MetaStorage.UpdateObject4Lifecycle(ctx, srcObject, newObj, nil)
 		if err != nil {
 			log.Errorln("failed to update meta data after copy, err:", err)
 			// if failed, delete target object
 			s.cleanObject(ctx, newObj, targetSd)
 			return err
+		} else {
+			s.cleanObject(ctx, srcObject, nil)
 		}
 		log.Debug("Update metadata after copy is successful!!")
 
