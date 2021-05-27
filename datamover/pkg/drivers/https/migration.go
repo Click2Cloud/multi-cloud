@@ -541,7 +541,7 @@ func MultipartCopyObjLifecycle(ctx context.Context, obj *osdss3.Object, destLoca
 	if err == nil {
 		// copy parts succeed, need to complete it
 		completeReq := &osdss3.CompleteMultipartRequest{BucketName: destLoca.BucketName, ObjectKey: obj.ObjectKey,
-			UploadId: uploadId, CompleteParts: completeParts, SourceVersionID: obj.VersionId}
+			UploadId: uploadId, CompleteParts: completeParts, SourceVersionID: obj.VersionId, SourceBucketName: obj.BucketName}
 		if job == nil {
 			// this is for lifecycle management
 			completeReq.RequestType = s3utils.RequestType_Lifecycle

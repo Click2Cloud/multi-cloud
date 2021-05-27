@@ -445,7 +445,7 @@ func (s *s3Service) CompleteMultipartUpload(ctx context.Context, in *pb.Complete
 	}
 
 	// TODO: if versioning is enabled, not need to delete oldObj
-	oldObj, err := s.MetaStorage.GetObject(ctx, bucketName, objectKey, "", false)
+	oldObj, err := s.MetaStorage.GetObject(ctx, in.SourceBucketName, objectKey, "", false)
 	if err != nil && err != ErrNoSuchKey {
 		log.Errorf("get object[%s] failed, err:%v\n", objectKey, err)
 		return ErrInternalError
@@ -480,6 +480,12 @@ func (s *s3Service) CompleteMultipartUpload(ctx context.Context, in *pb.Complete
 			return ErrDBError
 		}
 	} else {
+		err = s.MetaStorage.PutObject(ctx, &Object{Object: object}, oldObj, &multipart, nil, true)
+		if err != nil {
+			log.Errorf("failed to put object meta[object:%+v, oldObj:%+v]. err:%v\n", object, oldObj, err)
+			// TODO: consistent check & clean
+			return ErrDBError
+		}
 		err = s.MetaStorage.UpdateObject4Lifecycle(ctx, oldObj, &Object{Object: object}, &multipart)
 		if err != nil {
 			log.Errorln("failed to put object meta. err:", err)

@@ -59,12 +59,9 @@ func (s *APIService) BucketSSEPut(request *restful.Request, response *restful.Re
 		}
 
 		s3SSE := &s3.ServerSideEncryption{
-			SseType:              "",
-			EncryptionKey:        nil,
-			InitilizationVector:  nil,
-			XXX_NoUnkeyedLiteral: struct{}{},
-			XXX_unrecognized:     nil,
-			XXX_sizecache:        0,
+			SseType:             "",
+			EncryptionKey:       nil,
+			InitilizationVector: nil,
 		}
 		if sseConf.SSE.Enabled == "true" {
 			s3SSE.SseType = "SSE"
