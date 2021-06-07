@@ -17,12 +17,13 @@ package mongo
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	backend "github.com/opensds/multi-cloud/backend/pkg/model"
 	. "github.com/opensds/multi-cloud/dataflow/pkg/model"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 var adap = &adapter{}
@@ -55,11 +56,11 @@ type adapter struct {
 
 func (ad *adapter) GetJobStatus(jobID string) string {
 	job := Job{}
+	var err error
 	ss := ad.s.Copy()
 	defer ss.Close()
 	c := ss.DB(DataBaseName).C(CollJob)
-
-	err := c.Find(bson.M{"_id": bson.ObjectIdHex(jobID)}).One(&job)
+	err = c.Find(bson.M{"_id": bson.ObjectIdHex(jobID)}).One(&job)
 	if err != nil {
 		log.Errorf("Get job[ID#%s] failed:%v.\n", jobID, err)
 		return ""
@@ -69,7 +70,11 @@ func (ad *adapter) GetJobStatus(jobID string) string {
 }
 
 func (ad *adapter) UpdateJob(job *Job) error {
-	ss := ad.s.Copy()
+	//	ss := ad.s.Copy()
+
+	log.Println("in update job ####################")
+	ss := ad.s.New()
+	ad.s.New()
 	defer ss.Close()
 
 	c := ss.DB(DataBaseName).C(CollJob)
@@ -102,8 +107,34 @@ func (ad *adapter) UpdateJob(job *Job) error {
 	if job.Status != "" {
 		j.Status = job.Status
 	}
+	log.Println(job.MigratedCapacity)
+	if job.MigratedCapacity != 0 {
+		j.MigratedCapacity = job.MigratedCapacity
+		log.Println("after db update ********", j.MigratedCapacity)
+	}
 	if job.Progress != 0 {
 		j.Progress = job.Progress
+	}
+	if job.TimeRequired != 0 {
+		j.TimeRequired = job.TimeRequired
+	}
+	if job.TimeRequired == 0 {
+		j.TimeRequired = 0
+	}
+	if job.Msg != "" {
+		j.Msg = job.Msg
+	} else {
+		job.Msg = j.Msg
+	}
+	if j.Msg != "" {
+		job.Msg = j.Msg
+	}
+	if job.TimesResumed != 0 {
+		j.TimesResumed = job.TimesResumed
+	}
+	if job.ObjList != nil {
+		j.ObjList = job.ObjList
+		log.Println(j.ObjList, "In update ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 	}
 
 	err = c.Update(bson.M{"_id": j.Id}, &j)
@@ -237,6 +268,7 @@ func (ad *adapter) UpdateObjectStatus(jobId string, objKey string) error {
 	log.Println("UPDATE STATUS FOR OBJECT")
 	return nil
 }
+
 func (ad *adapter) UpdateObjectList(job *Job) error {
 	ss := ad.s.Copy()
 	defer ss.Close()
@@ -279,6 +311,21 @@ func (ad *adapter) UpdateObjectList(job *Job) error {
 	log.Println("UPDATE OBJECT LIST IN DATABASE SUCCEED")
 	return nil
 }
+
+func (ad *adapter) GetObjectList(jobID string) []ObjDet {
+	session := ad.s.Copy()
+	defer session.Close()
+	job := Job{}
+	collection := session.DB(DataBaseName).C(CollJob)
+	err := collection.Find(bson.M{"_id": bson.ObjectIdHex(jobID)}).One(&job)
+	if err != nil {
+		log.Println("Get job[ID#%s] failed:%v.\n", jobID, err)
+	}
+	fmt.Println(job.ObjList, " Objectdetail")
+	return job.ObjList
+
+}
+
 func (ad *adapter) GetJobDetails(j *Job) error {
 	ss := ad.s.Copy()
 	defer ss.Close()
@@ -358,17 +405,4 @@ func (ad *adapter) GetJobDetails(j *Job) error {
 
 	log.Println("Update job in database succeed.")
 	return nil
-}
-func (ad *adapter) GetObjectList(jobID string) []ObjDet {
-	session := ad.s.Copy()
-	defer session.Close()
-	job := Job{}
-	collection := session.DB(DataBaseName).C(CollJob)
-	err := collection.Find(bson.M{"_id": bson.ObjectIdHex(jobID)}).One(&job)
-	if err != nil {
-		log.Println("Get job[ID#%s] failed:%v.\n", jobID, err)
-	}
-	fmt.Println(job.ObjList, " Objectdetail")
-	return job.ObjList
-
 }

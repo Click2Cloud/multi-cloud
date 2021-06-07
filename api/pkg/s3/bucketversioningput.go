@@ -54,10 +54,7 @@ func (s *APIService) BucketVersioningPut(request *restful.Request, response *res
 	}
 
 	s3version := &s3.BucketVersioning{
-		Status:               "",
-		XXX_NoUnkeyedLiteral: struct{}{},
-		XXX_unrecognized:     nil,
-		XXX_sizecache:        0,
+		Status: "",
 	}
 
 	if versionConf.Status == utils.VersioningEnabled {

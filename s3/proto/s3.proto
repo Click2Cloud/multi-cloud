@@ -1,4 +1,5 @@
 syntax = "proto3";
+option go_package = ".;s3";
 
 service S3 {
     rpc ListBuckets (BaseRequest) returns (ListBucketsResponse) {
@@ -154,6 +155,7 @@ message CompleteMultipartRequest {
     string sourceVersionID = 5; // only for lifecycle
     string requestType = 6; // "" means end user, it's the default, lifecycle means lifecycle management
     int32 tier = 7;
+    string sourceBucketName = 8;
 }
 
 message CompleteMultipartResponse {
