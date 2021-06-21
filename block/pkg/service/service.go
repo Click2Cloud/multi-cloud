@@ -297,6 +297,21 @@ func (b *blockService) UpdateVolume(ctx context.Context, in *pb.UpdateVolumeRequ
 	if in.Volume.Name == "" {
 		in.Volume.Name = res.Name
 	}
+	if in.Volume.Type == "" {
+		in.Volume.Type = res.Type
+	}
+
+	var tags []*pb.Tag
+	for _, tag := range res.Tags {
+		tags = append(tags, &pb.Tag{
+			Key:   tag.Key,
+			Value: tag.Value,
+		})
+	}
+
+	if in.Volume.Tags == nil && len(in.Volume.Tags) == 0 {
+		in.Volume.Tags = tags
+	}
 
 	if backend.Backend.Type == constants.BackendTypeAwsBlock ||
 		backend.Backend.Type == constants.BackendTypeHpcBlock ||

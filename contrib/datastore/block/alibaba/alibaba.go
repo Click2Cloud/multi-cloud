@@ -124,7 +124,7 @@ func (ad *AlibabaAdapter) CreateVolume(ctx context.Context, volume *block.Create
 		request.KMSKeyId = volume.Volume.EncryptionSettings[KmsKeyId]
 	}
 
-	// volumetype ESSD is not yet supported by alibaba api hence, performancelevel variable is commented
+	// TODO: volumetype ESSD is not yet supported by alibaba api hence, performancelevel variable is commented
 	//	PL1: A single ESSD can deliver up to 50,000 random read/write IOPS.
 	//	PL2: A single ESSD can deliver up to 100,000 random read/write IOPS.
 	//	PL3: A single ESSD can deliver up to 1,000,000 random read/write IOPS

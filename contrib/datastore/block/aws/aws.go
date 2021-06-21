@@ -304,6 +304,28 @@ func (ad *AwsAdapter) UpdateVolume(ctx context.Context, in *block.UpdateVolumeRe
 		}
 	}
 
+	volumeId := aws.String(in.Volume.Metadata.Fields[VolumeId].GetStringValue())
+
+	volumeIds := []*string{volumeId}
+	input := &awsec2.DescribeVolumesInput{
+		VolumeIds: volumeIds,
+	}
+
+	result, err := ad.DescribeVolume(input)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	log.Infof("Get Volume response = %+v", result)
+
+	vol, err := ad.ParseVolume(result.Volumes[0])
+
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
 	if in.Volume.Type != "" {
 		input := &awsec2.ModifyVolumeInput{
 			VolumeId:   aws.String(in.Volume.Metadata.Fields[VolumeId].GetStringValue()),
@@ -331,7 +353,10 @@ func (ad *AwsAdapter) UpdateVolume(ctx context.Context, in *block.UpdateVolumeRe
 		if err != nil {
 			log.Error(err)
 			return nil, err
+		} else {
+			volume.Tags = vol.Tags
 		}
+
 	}
 
 	return &block.UpdateVolumeResponse{
