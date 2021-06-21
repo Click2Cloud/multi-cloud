@@ -291,6 +291,13 @@ func (b *blockService) UpdateVolume(ctx context.Context, in *pb.UpdateVolumeRequ
 	if in.Volume.Name != "" {
 		updatedName = in.Volume.Name
 	}
+	if in.Volume.Description == "" {
+		in.Volume.Description = res.Description
+	}
+	if in.Volume.Name == "" {
+		in.Volume.Name = res.Name
+	}
+
 	if backend.Backend.Type == constants.BackendTypeAwsBlock ||
 		backend.Backend.Type == constants.BackendTypeHpcBlock ||
 		backend.Backend.Type == constants.BackendTypeAlibabaBlock {
