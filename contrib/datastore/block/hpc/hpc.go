@@ -21,7 +21,7 @@ import (
 	"errors"
 	evs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
-	"github.com/opensds/multi-cloud/block/pkg/db"
+	model2 "github.com/opensds/multi-cloud/block/pkg/model"
 	"github.com/opensds/multi-cloud/block/proto"
 	pb "github.com/opensds/multi-cloud/block/proto"
 	"github.com/opensds/multi-cloud/contrib/datastore/block/common"
@@ -77,7 +77,8 @@ func getVolumeTypeForHPC(volType string) (model.CreateVolumeOptionVolumeType, er
 	}
 }
 
-// Todo: custom function
+// Todo: custom code -> Start
+
 // This is the helper function, which is used to get Status of Job and required
 // Entities (like VolumeId, etc.) if jobType is createVolume, and will return the Job Response from SDK
 func getJobStat(jobID string, evsClient *evs.EvsClient) (*model.ShowJobResponse, error) {
@@ -102,7 +103,6 @@ func getJobStat(jobID string, evsClient *evs.EvsClient) (*model.ShowJobResponse,
 	}
 }
 
-// Todo: custom function
 // This is the helper function to calculate IOPS for specific size of specific volumeType
 // Returns the IOPS value
 func getVolumeIOPs(volType string, volSize int64) int64 {
@@ -179,6 +179,78 @@ func getVolumeIOPs(volType string, volSize int64) int64 {
 	}
 	return volIOPs
 }
+
+func (ad *HpcAdapter) ParseVolumeTag(tags []model2.Tag) ([]*pb.Tag, map[string]bool, error) {
+	var convtags []*pb.Tag
+	keys := make(map[string]bool)
+	for _, tag := range tags {
+		if _, value := keys[tag.Key]; !value {
+			keys[tag.Key] = true
+			convtags = append(convtags, &pb.Tag{
+				Key:   tag.Key,
+				Value: tag.Value,
+			})
+		}
+	}
+	return convtags, keys, nil
+}
+
+func (ad *HpcAdapter) CreateVolumeTag(evsClient *evs.EvsClient, volume *block.UpdateVolumeRequest) error {
+	var tags []model.Tag
+	log.Info("Updating Tag Request: ", volume.Volume)
+	for _, tagData := range volume.Volume.Tags {
+		tags = append(tags, model.Tag{
+			Key:   tagData.Key,
+			Value: tagData.Value,
+		})
+	}
+	log.Info("Tags Converted ", tags)
+
+	action := model.GetBatchCreateVolumeTagsRequestBodyActionEnum()
+	tagReqBody := &model.BatchCreateVolumeTagsRequestBody{
+		Action: action.CREATE,
+		Tags:   tags,
+	}
+	volumeCloudID := volume.Volume.Metadata.Fields[common.VolumeId].GetStringValue()
+
+	createTagReq := &model.BatchCreateVolumeTagsRequest{
+		VolumeId: volumeCloudID,
+		Body:     tagReqBody,
+	}
+	createTagResp, err := evsClient.BatchCreateVolumeTags(createTagReq)
+	if err != nil {
+		log.Errorf("failed to update Tags %+v", err)
+		return err
+	}
+	log.Info("Updated Tag's Response: ", createTagResp.String())
+	return nil
+}
+
+func (ad *HpcAdapter) ResizeVolume(evsClient *evs.EvsClient, volume *block.UpdateVolumeRequest) error {
+	log.Info("Updating Tag Request: ", volume.Volume)
+	volumeId := volume.Volume.Metadata.Fields[common.VolumeId].GetStringValue()
+	resizeVolumeRequest := &model.ResizeVolumeRequest{
+		VolumeId: volumeId,
+		Body: &model.ResizeVolumeRequestBody{
+			OsExtend: &model.OsExtend{NewSize: int32(volume.Volume.Size)},
+		},
+	}
+
+	resizeResp, err := evsClient.ResizeVolume(resizeVolumeRequest)
+	if err != nil {
+		return err
+	}
+	log.Info("Updated Disk Size Response ", resizeResp)
+	_, err = getJobStat(*resizeResp.JobId, evsClient)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return nil
+}
+
+// Todo: custom code -> End
 
 // Create EVS volume
 func (ad *HpcAdapter) CreateVolume(ctx context.Context, volume *block.CreateVolumeRequest) (*block.CreateVolumeResponse, error) {
@@ -345,7 +417,17 @@ func (ad *HpcAdapter) GetVolume(ctx context.Context, volume *block.GetVolumeRequ
 		log.Error(parseErr)
 		return nil, parseErr
 	}
-
+	// Todo: custom code -> Start
+	var tags []*pb.Tag
+	for key, value := range showResponse.Volume.Tags {
+		tags = append(tags, &pb.Tag{
+			Key:   key,
+			Value: value,
+		})
+	}
+	vol.Tags = tags
+	vol.Description = showResponse.Volume.Description
+	// Todo: custom code -> End
 	return &block.GetVolumeResponse{
 		Volume: vol,
 	}, nil
@@ -355,7 +437,7 @@ func (ad *HpcAdapter) GetVolume(ctx context.Context, volume *block.GetVolumeRequ
 func (ad *HpcAdapter) UpdateVolume(ctx context.Context, volume *block.UpdateVolumeRequest) (*block.UpdateVolumeResponse, error) {
 	evsClient := ad.evsc
 
-	log.Error("Entered to update volume with details: %+v", volume)
+	log.Info("Entered to update volume with details: %+v", volume)
 	name := volume.Volume.Name
 	updateVolOption := &model.UpdateVolumeOption{
 		Name: &name,
@@ -372,35 +454,40 @@ func (ad *HpcAdapter) UpdateVolume(ctx context.Context, volume *block.UpdateVolu
 		},
 	}
 
-	// Todo: custom code -> Start
-	resizeVolumeRequest := &model.ResizeVolumeRequest{
-		VolumeId: volumeId,
-		Body: &model.ResizeVolumeRequestBody{
-			OsExtend: &model.OsExtend{NewSize: int32(volume.Volume.Size)},
-		},
-	}
-
-	resizeResp, err := evsClient.ResizeVolume(resizeVolumeRequest)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-	log.Info("Updated Disk Size Response ", resizeResp)
-
-	_, err = getJobStat(*resizeResp.JobId, evsClient)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-	// Todo: custom code -> End
-
 	updateResp, updateErr := evsClient.UpdateVolume(updateVolumeRequest)
-
 	if updateErr != nil {
 		log.Error(updateErr)
-		return nil, updateErr
+		//return nil, updateErr
 	}
 	log.Info("Updated Name & Description Response ", updateResp)
+
+	// Todo: custom code -> Start
+
+	// Creating Tags
+	if volume.Volume.Size == 0 {
+		volume.Volume.Size = int64(*updateResp.Size)
+	}
+	if len(volume.Volume.Tags) > 0 {
+		err := ad.CreateVolumeTag(evsClient, volume)
+		if err != nil {
+			log.Error("Error While Updating Volume Tags: ", err)
+		} else {
+			log.Info("Updated Volume Tags successfully.")
+		}
+	}
+	// Resizing Volume
+	if volume.Volume.Size > 0 {
+		err := ad.ResizeVolume(evsClient, volume)
+		if err != nil {
+			log.Error("Error While Updating Volume Size: ", err)
+		} else {
+			log.Info("Updated Volume Size successfully.")
+		}
+	}
+
+	size := volume.Volume.Size
+	volIOPs := getVolumeIOPs(*updateResp.VolumeType, size)
+	// Todo: custom code -> End
 
 	meta := map[string]interface{}{
 		common.VolumeId: *updateResp.Id,
@@ -415,26 +502,6 @@ func (ad *HpcAdapter) UpdateVolume(ctx context.Context, volume *block.UpdateVolu
 	// Todo: Uncomment me if not using custom code
 	//size := (int64)(*updateResp.Size * utils.GB_FACTOR)
 
-	// Todo: custom code -> Start
-	size := volume.Volume.Size
-	volIOPs := getVolumeIOPs(*updateResp.VolumeType, size)
-
-	// Todo: Fix me not getting tags response
-	// Getting tags already present data from db
-	resData, err := db.DbAdapter.GetVolume(ctx, volume.Id)
-	if err != nil {
-		log.Errorf("Failed to get volume: [%v] from db , error: %s\n", resData, err)
-		return nil, err
-	}
-	var tags []*pb.Tag
-	for _, tag := range resData.Tags {
-		tags = append(tags, &pb.Tag{
-			Key:   tag.Key,
-			Value: tag.Value,
-		})
-	}
-	// Todo: custom code -> End
-
 	vol := &block.Volume{
 		Size:     size,
 		Status:   *updateResp.Status,
@@ -443,7 +510,6 @@ func (ad *HpcAdapter) UpdateVolume(ctx context.Context, volume *block.UpdateVolu
 
 		// Todo: custom code -> Start
 		Iops: volIOPs,
-		Tags: tags,
 		// Todo: custom code -> End
 	}
 
