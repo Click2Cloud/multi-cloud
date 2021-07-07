@@ -39,4 +39,5 @@ func (factory *AwsS3DriverFactory) CreateDriver(backend *backendpb.BackendDetail
 
 func init() {
 	driver.RegisterDriverFactory(constants.BackendTypeAws, &AwsS3DriverFactory{})
+	driver.RegisterDriverFactory(constants.BackendTypeAwsBlock, &AwsS3DriverFactory{})
 }
