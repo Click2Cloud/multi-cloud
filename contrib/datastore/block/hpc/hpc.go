@@ -82,25 +82,28 @@ func getVolumeTypeForHPC(volType string) (model.CreateVolumeOptionVolumeType, er
 // This is the helper function, which is used to get Status of Job and required
 // Entities (like VolumeId, etc.) if jobType is createVolume, and will return the Job Response from SDK
 func getJobStat(jobID string, evsClient *evs.EvsClient) (*model.ShowJobResponse, error) {
-
-	init := model.GetShowJobResponseStatusEnum().INIT
-	fail := model.GetShowJobResponseStatusEnum().FAIL
-	status := init
-
-	for {
-		jobResponse, err := evsClient.ShowJob(&model.ShowJobRequest{JobId: jobID})
+	status := model.GetShowJobResponseStatusEnum()
+	jobReq := &model.ShowJobRequest{JobId: jobID}
+	for c := 0; c < 3; {
+		jobResponse, err := evsClient.ShowJob(jobReq)
 		if err != nil {
 			return nil, err
 		}
-		status = *jobResponse.Status
-		if status == init {
-			continue
-		} else if status == fail {
-			err = errors.New(*jobResponse.FailReason)
-			return nil, err
+		switch *jobResponse.Status {
+		case status.INIT:
+			{
+				time.Sleep(time.Second / 2)
+				c++
+				continue
+			}
+		case status.FAIL:
+			{
+				return nil, errors.New(*jobResponse.FailReason)
+			}
 		}
-		return jobResponse, err
+		return jobResponse, nil
 	}
+	return nil, errors.New("Error: Unable to create Volume, request timeout")
 }
 
 // This is the helper function to calculate IOPS for specific size of specific volumeType
