@@ -16,6 +16,9 @@ package main
 
 import (
 	"github.com/micro/go-micro/v2"
+	"time"
+
+	//"github.com/micro/go-plugins/registry/kubernetes/v2"
 	"github.com/opensds/multi-cloud/api/pkg/utils/obs"
 	handler "github.com/opensds/multi-cloud/dataflow/pkg"
 	"github.com/opensds/multi-cloud/dataflow/pkg/scheduler"
@@ -50,6 +53,7 @@ func main() {
 	pb.RegisterDataFlowHandler(service.Server(), handler.NewDataFlowService())
 	scheduler.LoadAllPlans()
 	scheduler.LoadLifecycleScheduler()
+	time.Local, _ = time.LoadLocation("UTC")
 	if err := service.Run(); err != nil {
 		log.Info(err)
 	}

@@ -17,10 +17,9 @@ package backend
 import (
 	"errors"
 	"net/http"
+	"os"
 	"strconv"
 
-	"github.com/emicklei/go-restful"
-	"github.com/micro/go-micro/v2/client"
 	"github.com/opensds/multi-cloud/api/pkg/common"
 	c "github.com/opensds/multi-cloud/api/pkg/context"
 	"github.com/opensds/multi-cloud/api/pkg/filters/signature/credentials/keystonecredentials"
@@ -30,9 +29,11 @@ import (
 	dataflow "github.com/opensds/multi-cloud/dataflow/proto"
 	. "github.com/opensds/multi-cloud/s3/pkg/exception"
 	s3 "github.com/opensds/multi-cloud/s3/proto"
+
+	"github.com/emicklei/go-restful"
+	"github.com/micro/go-micro/v2/client"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
-	"os"
 )
 
 const (
@@ -46,6 +47,21 @@ const (
 	s3Service_K8S          = "soda.multicloud.v1.s3"
 	dataflowService_K8S    = "soda.multicloud.v1.dataflow"
 )
+
+// Map of object storage providers supported by s3 services. Keeping a map
+// to optimize search
+var objectStorage = map[string]int{
+	"aws-s3":               1,
+	"azure-blob":           1,
+	"ibm-cos":              1,
+	"hw-obs":               1,
+	"ceph-s3":              1,
+	"gcp-s3":               1,
+	"fusionstorage-object": 1,
+	"yig":                  1,
+	"alibaba-oss":          1,
+	"sony-oda":             1,
+}
 
 type APIService struct {
 	backendClient  backend.BackendService
@@ -61,6 +77,11 @@ type EnCrypter struct {
 
 type DeCrypter struct {
 	CipherText string `json:"ciphertext,omitempty"`
+}
+
+func isObjectStorage(storage string) bool {
+	_, ok := objectStorage[storage]
+	return ok
 }
 
 func NewAPIService(c client.Client) *APIService {
@@ -246,12 +267,15 @@ func (s *APIService) CreateBackend(request *restful.Request, response *restful.R
 	backendDetailS3.Access = backendDetail.Access
 	backendDetailS3.Security = backendDetail.Security
 
-	_, err = s.s3Client.BackendCheck(ctx, backendDetailS3)
-	err1 := errors.New("Failed to register backend due to invalid credentials.")
-	if err != nil {
-		log.Errorf("failed to create backend due to wrong credentials: %v", err)
-		response.WriteError(http.StatusBadRequest, err1)
-		return
+	// This backend check will be called only for object storage
+	if isObjectStorage(backendDetail.Type) {
+		_, err = s.s3Client.BackendCheck(ctx, backendDetailS3)
+		if err != nil {
+			log.Errorf("failed to create backend due to wrong credentials: %v", err)
+			err1 := errors.New("Failed to register backend due to invalid credentials.")
+			response.WriteError(http.StatusBadRequest, err1)
+			return
+		}
 	}
 
 	res, err := s.backendClient.CreateBackend(ctx, &backend.CreateBackendRequest{Backend: backendDetail})
