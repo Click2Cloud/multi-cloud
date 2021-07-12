@@ -147,13 +147,14 @@ func (ad *AwsAdapter) CreateVolume(ctx context.Context, volume *block.CreateVolu
 	}
 
 	input := &awsec2.CreateVolumeInput{
-		AvailabilityZone:  aws.String(volume.Volume.AvailabilityZone),
-		Size:              aws.Int64(volume.Volume.Size / utils.GB_FACTOR),
-		VolumeType:        aws.String(volume.Volume.Type),
-		TagSpecifications: []*awsec2.TagSpecification{tagList},
-		Encrypted:         aws.Bool(volume.Volume.Encrypted),
+		AvailabilityZone: aws.String(volume.Volume.AvailabilityZone),
+		Size:             aws.Int64(volume.Volume.Size / utils.GB_FACTOR),
+		VolumeType:       aws.String(volume.Volume.Type),
+		Encrypted:        aws.Bool(volume.Volume.Encrypted),
 	}
-
+	if len(tags) > 0 {
+		input.TagSpecifications = []*awsec2.TagSpecification{tagList}
+	}
 	if volume.Volume.Type == "io1" || volume.Volume.Type == "io2" || volume.Volume.Type == "gp3" {
 		// Iops is required only for io1 && io2 && gp3 volumes
 		input.Iops = aws.Int64(volume.Volume.Iops)
