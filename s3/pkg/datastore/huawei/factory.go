@@ -18,4 +18,5 @@ func (factory *HWObsDriverFactory) CreateDriver(backend *backendpb.BackendDetail
 func init() {
 	driver.RegisterDriverFactory(constants.BackendTypeObs, &HWObsDriverFactory{})
 	driver.RegisterDriverFactory(constants.BackendFusionStorage, &HWObsDriverFactory{})
+	driver.RegisterDriverFactory(constants.BackendTypeHpcBlock, &HWObsDriverFactory{})
 }
