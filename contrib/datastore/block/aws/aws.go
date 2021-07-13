@@ -60,16 +60,16 @@ func (ad *AwsAdapter) ParseVolume(volumeAWS *awsec2.Volume) (*block.Volume, erro
 	}
 
 	volume := &block.Volume{
-		Size:       *volumeAWS.Size * utils.GB_FACTOR,
-		Encrypted:  *volumeAWS.Encrypted,
-		Status:     *volumeAWS.State,
-		SnapshotId: *volumeAWS.SnapshotId,
-		Type:       *volumeAWS.VolumeType,
-		Tags:       tags,
-		Metadata:   metadata,
+		Size:               *volumeAWS.Size * utils.GB_FACTOR,
+		Encrypted:          *volumeAWS.Encrypted,
+		Status:             *volumeAWS.State,
+		SnapshotId:         *volumeAWS.SnapshotId,
+		Type:               *volumeAWS.VolumeType,
+		Tags:               tags,
+		Metadata:           metadata,
 	}
 
-	if *volumeAWS.VolumeType == "io1" || *volumeAWS.VolumeType == "io2" || *volumeAWS.VolumeType == "gp3" {
+	if *volumeAWS.VolumeType == "gp2" || *volumeAWS.VolumeType == "io1"{
 		volume.Iops = *volumeAWS.Iops
 	}
 
@@ -147,16 +147,15 @@ func (ad *AwsAdapter) CreateVolume(ctx context.Context, volume *block.CreateVolu
 	}
 
 	input := &awsec2.CreateVolumeInput{
-		AvailabilityZone: aws.String(volume.Volume.AvailabilityZone),
-		Size:             aws.Int64(volume.Volume.Size / utils.GB_FACTOR),
-		VolumeType:       aws.String(volume.Volume.Type),
-		Encrypted:        aws.Bool(volume.Volume.Encrypted),
+		AvailabilityZone:  aws.String(volume.Volume.AvailabilityZone),
+		Size:              aws.Int64(volume.Volume.Size / utils.GB_FACTOR),
+		VolumeType:        aws.String(volume.Volume.Type),
+		TagSpecifications: []*awsec2.TagSpecification{tagList},
+		Encrypted:         aws.Bool(volume.Volume.Encrypted),
 	}
-	if len(tags) > 0 {
-		input.TagSpecifications = []*awsec2.TagSpecification{tagList}
-	}
-	if volume.Volume.Type == "io1" || volume.Volume.Type == "io2" || volume.Volume.Type == "gp3" {
-		// Iops is required only for io1 && io2 && gp3 volumes
+
+	if volume.Volume.Type ==  "io1" {
+		// Iops is required only for io1 volumes
 		input.Iops = aws.Int64(volume.Volume.Iops)
 
 		//Only for specific regions supported
@@ -305,28 +304,6 @@ func (ad *AwsAdapter) UpdateVolume(ctx context.Context, in *block.UpdateVolumeRe
 		}
 	}
 
-	volumeId := aws.String(in.Volume.Metadata.Fields[VolumeId].GetStringValue())
-
-	volumeIds := []*string{volumeId}
-	input := &awsec2.DescribeVolumesInput{
-		VolumeIds: volumeIds,
-	}
-
-	result, err := ad.DescribeVolume(input)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	log.Infof("Get Volume response = %+v", result)
-
-	vol, err := ad.ParseVolume(result.Volumes[0])
-
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
 	if in.Volume.Type != "" {
 		input := &awsec2.ModifyVolumeInput{
 			VolumeId:   aws.String(in.Volume.Metadata.Fields[VolumeId].GetStringValue()),
@@ -354,10 +331,7 @@ func (ad *AwsAdapter) UpdateVolume(ctx context.Context, in *block.UpdateVolumeRe
 		if err != nil {
 			log.Error(err)
 			return nil, err
-		} else {
-			volume.Tags = vol.Tags
 		}
-
 	}
 
 	return &block.UpdateVolumeResponse{
