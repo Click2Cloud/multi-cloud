@@ -84,7 +84,7 @@ func getVolumeTypeForHPC(volType string) (model.CreateVolumeOptionVolumeType, er
 func getJobStat(jobID string, evsClient *evs.EvsClient) (*model.ShowJobResponse, error) {
 	status := model.GetShowJobResponseStatusEnum()
 	jobReq := &model.ShowJobRequest{JobId: jobID}
-	for c := 0; c < 3; {
+	for c := 0; c < 6; {
 		jobResponse, err := evsClient.ShowJob(jobReq)
 		if err != nil {
 			return nil, err
