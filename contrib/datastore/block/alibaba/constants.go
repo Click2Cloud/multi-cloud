@@ -27,24 +27,6 @@ const (
 	// that was used to protect the encrypted volume.
 	KmsKeyId = "KmsKeyId"
 
-	// The Alibab Resource Name (ARN) of the Outpost.
-	OutpostArn = "OutpostArn"
-
 	// The ID of the volume in Alibaba.
 	VolumeId = "VolumeId"
-
-	// The type of the volume in Alibaba.
-	VolumeType = "VolumeType"
-
-	// The type of the volume in Alibaba.
-	Progress = "Progress"
-
-	// The modification completion or failure time at Alibaba.
-	StartTimeAtBackend = "StartTimeAtBackend"
-
-	// The modification completion or failure time at Alibaba.
-	EndTimeAtBackend = "EndTimeAtBackend"
-
-	// A status message about the modification progress or failure in Alibaba.
-	StatusMessage = "StatusMessage"
 )

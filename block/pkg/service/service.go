@@ -291,8 +291,31 @@ func (b *blockService) UpdateVolume(ctx context.Context, in *pb.UpdateVolumeRequ
 	if in.Volume.Name != "" {
 		updatedName = in.Volume.Name
 	}
+	if in.Volume.Description == "" {
+		in.Volume.Description = res.Description
+	}
+	if in.Volume.Name == "" {
+		in.Volume.Name = res.Name
+	}
+	if in.Volume.Type == "" {
+		in.Volume.Type = res.Type
+	}
+
+	var tags []*pb.Tag
+	for _, tag := range res.Tags {
+		tags = append(tags, &pb.Tag{
+			Key:   tag.Key,
+			Value: tag.Value,
+		})
+	}
+
+	if in.Volume.Tags == nil && len(in.Volume.Tags) == 0 {
+		in.Volume.Tags = tags
+	}
+
 	if backend.Backend.Type == constants.BackendTypeAwsBlock ||
-		backend.Backend.Type == constants.BackendTypeHpcBlock {
+		backend.Backend.Type == constants.BackendTypeHpcBlock ||
+		backend.Backend.Type == constants.BackendTypeAlibabaBlock {
 		metaMap, err := utils.ConvertMetadataStructToMap(in.Volume.Metadata)
 		if err != nil {
 			log.Errorf("Failed to convert metaStruct: [%+v] to metaMap , error: %s", in.Volume.Metadata, err)
@@ -306,7 +329,6 @@ func (b *blockService) UpdateVolume(ctx context.Context, in *pb.UpdateVolumeRequ
 		}
 		in.Volume.Metadata = metaStruct
 	}
-
 	vol, err := sd.UpdateVolume(ctx, in)
 	if err != nil {
 		log.Errorf("received error in updating volumes at backend, error: %s ", err)

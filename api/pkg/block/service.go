@@ -28,6 +28,7 @@ import (
 	"github.com/opensds/multi-cloud/backend/proto"
 	"github.com/opensds/multi-cloud/block/proto"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 const (
@@ -225,6 +226,7 @@ func (s *APIService) CreateVolume(request *restful.Request, response *restful.Re
 	actx := request.Attribute(c.KContext).(*c.Context)
 	volumeDetail.TenantId = actx.TenantId
 	volumeDetail.UserId = actx.UserId
+	ctx, _ = context.WithTimeout(ctx, 10*time.Second)
 
 	res, err := s.blockClient.CreateVolume(ctx, &block.CreateVolumeRequest{Volume: volumeDetail})
 	if err != nil {
