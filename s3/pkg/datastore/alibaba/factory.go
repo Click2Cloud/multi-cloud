@@ -40,5 +40,4 @@ func (factory *AlibabaDriverFactory) CreateDriver(backend *backendpb.BackendDeta
 
 func init() {
 	driver.RegisterDriverFactory(constants.BackendTypeAlibaba, &AlibabaDriverFactory{})
-	driver.RegisterDriverFactory(constants.BackendTypeAlibabaBlock, &AlibabaDriverFactory{})
 }
