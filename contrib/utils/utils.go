@@ -30,7 +30,12 @@ const (
 		"0123456789" +
 		"~=+%^*/()[]{}/!@#$?|"
 
-	GB_FACTOR = 1024 * 1024 * 1024
+	// Todo: Uncomment me if not using custom code
+	//GB_FACTOR = 1024 * 1024 * 1024
+
+	// Todo: Custom code -> Start
+	GB_FACTOR = 1
+	// Todo: Custom code -> End
 )
 
 func RandString(length int) string {

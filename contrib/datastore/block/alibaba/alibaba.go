@@ -81,6 +81,22 @@ func (ad *AlibabaAdapter) ParseTag(tagParsed []ecs.CreateDiskTag) ([]*block.Tag,
 	return tags, nil
 }
 
+// Todo: custom code -> Start
+
+func (ad *AlibabaAdapter) ParseDescribeTag(tagParsed ecs.TagsInDescribeDisks) ([]*block.Tag, error) {
+
+	var tags []*block.Tag
+	for _, tag := range tagParsed.Tag {
+		tags = append(tags, &block.Tag{
+			Key:   tag.TagKey,
+			Value: tag.TagValue,
+		})
+	}
+	return tags, nil
+}
+
+// Todo: custom code -> End
+
 // volume functions
 func (ad *AlibabaAdapter) CreateVolume(ctx context.Context, volume *block.CreateVolumeRequest) (*block.CreateVolumeResponse, error) {
 
@@ -108,7 +124,7 @@ func (ad *AlibabaAdapter) CreateVolume(ctx context.Context, volume *block.Create
 		request.KMSKeyId = volume.Volume.EncryptionSettings[KmsKeyId]
 	}
 
-	// volumetype ESSD is not yet supported by alibaba api hence, performancelevel variable is commented
+	// TODO: volumetype ESSD is not yet supported by alibaba api hence, performancelevel variable is commented
 	//	PL1: A single ESSD can deliver up to 50,000 random read/write IOPS.
 	//	PL2: A single ESSD can deliver up to 100,000 random read/write IOPS.
 	//	PL3: A single ESSD can deliver up to 1,000,000 random read/write IOPS
@@ -178,23 +194,38 @@ func (ad *AlibabaAdapter) GetVolume(ctx context.Context, volume *block.GetVolume
 		log.Error(err)
 		//	return nil, err
 	}
-
+	// Todo: custom code -> Start
+	var diskResp ecs.Disk
+	diskId := volume.Volume.Metadata.Fields[VolumeId].GetStringValue()
+	if response.TotalCount > 0 {
+		for i := 0; i < response.TotalCount; i++ {
+			if response.Disks.Disk[i].DiskId == diskId {
+				diskResp = response.Disks.Disk[i]
+				break
+			}
+		}
+	}
+	// Todo: custom code -> End
 	log.Infof("Get Volume response = %+v", response)
 
 	vol, err := ad.ParseVolume(&ecs.Disk{
-		DiskId:       volume.Volume.Metadata.Fields[VolumeId].GetStringValue(),
-		Size:         int(volume.Volume.Size),
-		IOPS:         (int)(volume.Volume.Iops),
+		DiskId: volume.Volume.Metadata.Fields[VolumeId].GetStringValue(),
+		Size:   int(volume.Volume.Size),
+		//IOPS:         (int)(volume.Volume.Iops),
+		IOPS:         diskResp.IOPS,
 		RegionId:     volume.Volume.Region,
 		Description:  volume.Volume.Description,
 		Type:         volume.Volume.Type,
 		CreationTime: time.Now().Format(time.RFC1123),
 		ZoneId:       volume.Volume.AvailabilityZone,
 		DiskName:     volume.Volume.Name,
-		Status:       volume.Volume.Status,
-		Encrypted:    volume.Volume.Encrypted,
-		KMSKeyId:     volume.Volume.EncryptionSettings[KmsKeyId],
+		//Status:       volume.Volume.Status,
+		Status:    diskResp.Status,
+		Encrypted: volume.Volume.Encrypted,
+		KMSKeyId:  volume.Volume.EncryptionSettings[KmsKeyId],
 	})
+	// Todo: custom code line
+	vol.Tags, _ = ad.ParseDescribeTag(diskResp.Tags)
 
 	if err != nil {
 		log.Error(err)
